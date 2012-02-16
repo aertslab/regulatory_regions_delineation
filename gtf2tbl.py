@@ -67,10 +67,12 @@ class Transcript(object):
 
     @property
     def cdsStart(self):
+        if not self.CDSs: return self.txStart
         return min(map(operator.itemgetter(0), self.CDSs))
 
     @property
     def cdsEnd(self):
+        if not self.CDSs: return self.txStart
         return max(map(operator.itemgetter(1), self.CDSs))
 
     def __len__(self):
