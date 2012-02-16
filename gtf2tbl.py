@@ -24,7 +24,7 @@ class Transcript(object):
                 if source != 'protein_coding': continue
                 attributes = dict()
                 for element in attributes_str.split(';'):
-                    match = re.match("^\W*([A-Za-z_]+)\W+\"([A-Za-z_0-9]+)\"\W*$", element)
+                    match = re.match("^\W*([A-Za-z_]+)\W+\"([A-Za-z_0-9\.]+)\"\W*$", element)
                     if match:
                         key, value = match.groups()
                         attributes[key] = value
