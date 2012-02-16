@@ -19,7 +19,7 @@ class Transcript(object):
     def _iterate_gtf(filename):
         with open(filename, 'r') as handle:
             for line in handle:
-                if line.startswith('#'): continue
+                if line.startswith('#') or not line.strip(): continue
                 seqid, source, type, start, end, score, strand, phase, attributes_str = line.rstrip().split('\t')
                 if source != 'protein_coding': continue
                 attributes = dict()
