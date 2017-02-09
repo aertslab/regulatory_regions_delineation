@@ -8,7 +8,7 @@ from piecewiselocation import PieceWiseLocation
 # non-coding sequences ...
 
 
-LOAD_IDS_STATEMENT = r"""SELECT ID FROM genes"""
+LOAD_GENE_IDS_STATEMENT = r"""SELECT geneID FROM genes"""
 GET_CHROMOSOME_LENGTHS_STATEMENT = r"""SELECT name, length FROM chromosomes"""
 
 class Modes:
@@ -33,10 +33,10 @@ def chromosome_iterator(filename):
         for line in handle: yield line.rstrip()
     
 
-def ids_iterator(connection):
+def gene_ids_iterator(connection):
     cursor = connection.cursor()
-    cursor.execute(LOAD_IDS_STATEMENT)
-    for id, in cursor: yield id
+    cursor.execute(LOAD_GENE_IDS_STATEMENT)
+    for gene_id, in cursor: yield gene_id
     cursor.close()
 
 
@@ -48,13 +48,13 @@ def find_unique_transcript(transcripts, chromosomes):
     
 
 def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
-            upstream_extension, downstream_extension, mode):
-    ids = set(ids_iterator(connection))
-    alt_name2locations = dict()
-    for id in ids:
-        tx = find_unique_transcript(Transcript.load_by_id(connection, id), chromosomes)
+            upstream_extension, downstream_extension, intronic_extension, mode):
+    gene_ids = set(gene_ids_iterator(connection))
+    gene_name2locations = dict()
+    for gene_id in gene_ids:
+        tx = find_unique_transcript(Transcript.load_by_gene_id(connection, gene_id), chromosomes)
         if not tx:
-            print >>sys.stderr, "Skipped {0:s}: no unique transcript.".format(id)
+            print >>sys.stderr, "Skipped {0:s}: no unique transcript.".format(gene_id)
             continue
         
         if tx.coding_sequence().isempty():
@@ -81,6 +81,14 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
             intragenic_location = tx.five_prime_utr()
         else: # No transcript ...
             intragenic_location = tx.empty_interval()
+
+        if not intragenic_location.isempty() and intronic_extension > 0:
+            if tx.on_positive_strand():
+                filter_interval = Interval(tx.tss_as_bp_location(), tx.tss_as_bp_location() + intronic_extension)
+                intragenic_location = intragenic_location.interval_limit(filter_interval)
+            else:
+                filter_interval = Interval(tx.tss_as_bp_location() - intronic_extension + 1, tx.tss_as_bp_location() + 1)
+                intragenic_location = intragenic_location.interval_limit(filter_interval)
                 
         # Remove coding sequences from all transcripts, including the current transcript
         # itself. The non-coding transcripts are not removed ...
@@ -111,29 +119,29 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
                 downstream_location = downstream_location.filter(tx.tes_shifted_1bp_downstream_as_bp_location())
                 regulatory_location += downstream_location
         
-        alt_name2locations.setdefault(tx.altName, []).append(regulatory_location)
-    for alt_name in sorted(alt_name2locations.keys()):
-        locations = alt_name2locations[alt_name]
+        gene_name2locations.setdefault(tx.gene_name, []).append(regulatory_location)
+    for gene_name in sorted(gene_name2locations.keys()):
+        locations = gene_name2locations[gene_name]
         if (len(set([loc.chromosome for loc in locations])) != 1 or
             len(set([loc.on_positive_strand for loc in locations])) != 1):
-            print >>sys.stderr, "Skipped {0:s}: cannot combine regulatory regions.".format(alt_name)
+            print >>sys.stderr, "Skipped {0:s}: cannot combine regulatory regions.".format(gene_name)
             continue
         combined_location = reduce(operator.add, locations)
         if combined_location.isempty():
-            print >>sys.stderr, "Skipped {0:s}: no regulatory region remains.".format(alt_name)
+            print >>sys.stderr, "Skipped {0:s}: no regulatory region remains.".format(gene_name)
         else:
             for idx, interval in enumerate(combined_location):
                 yield (combined_location.chromosome, interval.start, interval.end,
-                   "{0:s}#{1:d}".format(alt_name, idx + 1), 
+                   "{0:s}#{1:d}".format(gene_name, idx + 1),
                    '+' if combined_location.on_positive_strand else '-')
 
 
 def display_usage():
-    print "Usage: python create-regulatory-regions-bed.py <sqlite3-db> <chromosomes> <upstream-extend> <downstream-extend> <full-transcript?>"
+    print "Usage: python create-regulatory-regions-bed.py <sqlite3-db> <chromosomes> <upstream-extend> <downstream-extend> <intronic-extend> <full-transcript?>"
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 6:
+    if len(sys.argv) != 7:
         display_usage()
         print >>sys.stderr, "Wrong number of arguments."
         sys.exit(2)
@@ -148,23 +156,24 @@ if __name__ == "__main__":
         sys.exit(1)
     upstream_extend = int(sys.argv[3])
     downstream_extend = int(sys.argv[4])
-    if sys.argv[5] == "FullTx":
+    intronic_extend = int(sys.argv[5])
+    if sys.argv[6] == "FullTx":
         mode = Modes.FULL_TRANSCRIPT
-    elif sys.argv[5] == "AllIntrons":
+    elif sys.argv[6] == "AllIntrons":
         mode = Modes.ALL_INTRONS
-    elif sys.argv[5] == "5utrIntron1":
+    elif sys.argv[6] == "5utrIntron1":
         mode = Modes.UTR5_INTRON1
-    elif sys.argv[5] == "NoTx":
+    elif sys.argv[6] == "NoTx":
         mode = Modes.NO_TRANSCRIPT
-    elif sys.argv[5] == "5utr":
+    elif sys.argv[6] == "5utr":
         mode = Modes.UTR5
     else:
-        print >>sys.stderr, "'{0:s}' is an unknown mode.".format(sys.argv[5])
+        print >>sys.stderr, "'{0:s}' is an unknown mode.".format(sys.argv[6])
         sys.exit(1)
     
     chromosomes = set(chromosome_iterator(chromosomes_filename))
     with sqlite3.connect(database_filename) as connection:
         chromosome2length = load_chromosome_lengths(connection)
         for columns in regulatory_regions_iterator(connection, chromosomes, chromosome2length,
-                    upstream_extend, downstream_extend, mode):
+                    upstream_extend, downstream_extend, intronic_extend, mode):
             print >>sys.stdout, "{0:s}\t{1:d}\t{2:d}\t{3:s}\t0\t{4:s}".format(*columns)

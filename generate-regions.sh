@@ -33,8 +33,10 @@ base_genome_id=`cat $inifile | grep base_genome_id | cut -d= -f2`
 genomes_liftover_table=`cat $inifile | grep genomes_liftover_table | cut -d= -f2`
 upstream_extension_in_bp=`cat $inifile | grep upstream_extension_in_bp | cut -d= -f2`
 downstream_extension_in_bp=`cat $inifile | grep downstream_extension_in_bp | cut -d= -f2`
-include_full_tx=`cat $inifile | grep include_full_transcript | cut -d= -f2`
+delineation=`cat $inifile | grep delineation | cut -d= -f2`
 nr_of_species=`cat ${genomes_liftover_table} | awk -F '\t' -v r=${base_genome_id} '$3==r {print $1 "\t" $2}' | wc -l`
+if [ "$(cat $inifile | grep intronic_extension | wc -l)" -lt "1" ]; then intronic_extension_in_bp=0
+else intronic_extension_in_bp=$(cat $inifile | grep intronic_extension | cut -d= -f2); fi
 
 echo "UCSC gene table              = ${ucsc_table}"
 echo "Gene ID to description table = ${id_description_table}"
@@ -43,75 +45,86 @@ echo "Base genome ID               = ${base_genome_id}"
 echo "Liftover genomes table       = ${genomes_liftover_table}"
 echo "Chromosomes                  = ${chromosomes}"
 echo "Upstream extend              = ${upstream_extension_in_bp}bp"
-echo "Include full transcript      = ${include_full_tx}"
+echo "Delineation                  = ${delineation}"
+echo "Intronic extend              = ${intronic_extension_in_bp}bp"
 echo "Downstream extend            = ${downstream_extension_in_bp}bp"
 echo "Included species (${nr_of_species}#): "
 cat ${genomes_liftover_table} | awk -F '\t' -v r=${base_genome_id} '$3==r {print $1 "\t" $2}'
 
 create_region_description() {
 	local upstream_extension_in_bp=$1
-	local include_full_tx=$2
+	local delineation=$2
 	local downstream_extension_in_bp=$3
+	local intronic_extension_in_bp=$4
 	
-	if [ "${include_full_tx}" == "True" ]; then
+	if [ "${delineation}" == "FullTx" ]; then
 		suffix='-full-transcript'
+	elif [ "${delineation}" == "AllIntrons" ]; then
+		suffix='-introns'
+	elif [ "${delineation}" == "NoTx" ]; then
+		suffix=''
+	elif [ "${delineation}" == "5utr" ]; then
+		suffix='-5utr'
 	else
 		suffix='-5utr-intron1'
 	fi
+
+	if [ ${intronic_extension_in_bp} -gt 0 ]; then
+	   intronic="-tss-downstream${intronic_extension_in_bp}"
+	else intronic=''; fi
 	if [ ${downstream_extension_in_bp} -gt 0 ]; then
 		downstream="-downstream${downstream_extension_in_bp}"
-	fi
+	else downstream="";	fi
 	if [ ${upstream_extension_in_bp} -gt 0 ]; then
 		upstream="-upstream${upstream_extension_in_bp}"
-	fi
+	else upstream=""; fi
+
 	if [ ${downstream_extension_in_bp} -gt 0 -o ${upstream_extension_in_bp} -gt 0 ]; then
-		echo "-limited${upstream}${downstream}${suffix}"
-	else
-		echo "${suffix}"
-	fi
+		echo "-limited${upstream}${downstream}${intronic}${suffix}"
+	else echo "${intronic}${suffix}"; fi
 }
 
 create_filename() {
 	local base_genome_id=$1
 	local outputdir=$2
 	local upstream_extension_in_bp=$3
-	local include_full_tx=$4
+	local delineation=$4
 	local downstream_extension_in_bp=$5
 	local extension=$6
-	region_description=$(create_region_description ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp})
+	region_description=$(create_region_description ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} ${intronic_extension_in_bp})
 	echo "${outputdir}/${base_genome_id}${region_description}.${extension}"
 }
 
 # Create SQLite3 database ...
 echo "Create SQLite3 database ..."
-db_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp} "sqlite3.db")
+db_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "sqlite3.db")
 bash create-genes-database.sh ${ucsc_table} ${base_genome_2bit_file} ${db_filename}
 
 # Create BED file ...
 echo "Create BED file ..."
-bed_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp} "bed")
+bed_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "bed")
 echo "${chromosomes}" | tr ';' '\n' > $outputdir/chromosomes.tmp
-if [ ${include_full_tx} = "True" ]; then
-	python create-regulatory-regions-bed.py ${db_filename} $outputdir/chromosomes.tmp ${upstream_extension_in_bp} ${downstream_extension_in_bp} "FullTx" > ${bed_filename}
-else
-	python create-regulatory-regions-bed.py ${db_filename} $outputdir/chromosomes.tmp ${upstream_extension_in_bp} ${downstream_extension_in_bp} "5utrIntron1" > ${bed_filename}
-fi
+python create-regulatory-regions-bed.py ${db_filename} $outputdir/chromosomes.tmp ${upstream_extension_in_bp} ${downstream_extension_in_bp} ${intronic_extension_in_bp} ${delineation} > ${bed_filename}
 rm -f $outputdir/chromosomes.tmp
+
+# Create distribution of length of search space ...
+figure_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "png")
+/.generate-histogram.sh ${bed_filename}
 
 # Create gene ID file and gene description table ...
 echo "Create gene ID file and gene description table ..."
-id_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp} "gene-ids")
+id_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "gene-ids")
 cat ${bed_filename} | cut -f4 | cut -d'#' -f1 | sort -u > ${id_filename}
-description_table_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp} "gene-descriptions")
+description_table_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "gene-descriptions")
 cat ${id_description_table} | sort -k1 | join -a 1 -1 1 -2 1 ${id_filename} - | sed -e 's/ /|/' | tr '|' '\t' > ${description_table_filename}
-regions_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp} "regions")
+regions_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "regions")
 cat ${bed_filename} | cut -f4 | sort -u > ${regions_filename}
-region_table_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp} "gene-regions")
+region_table_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "gene-regions")
 python generate-gene-region-table.py ${bed_filename} > ${region_table_filename}
 
 # Analysis of lost gene IDs ...
 echo "Analysis of lost gene IDs ..."
-lostids_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp} "lost-gene-ids")
+lostids_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "lost-gene-ids")
 cat ${ucsc_table} | sed '1d' | cut -f13 | sort -u > $outputdir/geneids-all.tmp
 grep -vxF -f ${id_filename} $outputdir/geneids-all.tmp > ${lostids_filename}
 rm -f $outputdir/geneids-all.tmp
@@ -129,7 +142,7 @@ cat cistargetx-template.ini \
 
 # Create FASTA file ...
 echo "Create FASTA file ..."
-fasta_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp} "fasta")
+fasta_filename=$(create_filename ${base_genome_id} ${outputdir} ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} "fasta")
 twoBitToFa -bed=${bed_filename} ${base_genome_2bit_file} ${fasta_filename}
 #Usage of -bed instead of -seqList is easier and safe ...
 #awk '{printf "%s:%d-%d\n", $1, $2, $3}' ${bed_filename} | twoBitToFa ${base_genome_2bit_file} ${fasta_filename} -seqList=stdin
@@ -137,7 +150,7 @@ twoBitToFa -bed=${bed_filename} ${base_genome_2bit_file} ${fasta_filename}
 # Liftover procedure ...
 echo "Liftover procedure ..."
 ${DATADIR}/genomes/generate-liftover-fasta.sh ${bed_filename} \
-		${base_genome_id} $outputdir $(create_region_description ${upstream_extension_in_bp} ${include_full_tx} ${downstream_extension_in_bp}) ${genomes_liftover_table}
+		${base_genome_id} $outputdir $(create_region_description ${upstream_extension_in_bp} ${delineation} ${downstream_extension_in_bp} ${intronic_extension_in_bp}) ${genomes_liftover_table}
 		
 # Copy ini file to output folder ...
 cp ${inifile} ${outputdir}
