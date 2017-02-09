@@ -125,7 +125,7 @@ class TranscriptTest(unittest.TestCase):
     def test_NM_005649(self):
         #NM_005649    chr5    -    178138521    178157703    178139060    178156023
         #5    178138521,178152376,178153999,178155990,178157556,    178140622,178152472,178154126,178156074,178157703,    ZNF354A
-        tx = Transcript.load_by_id(self.connection, 'NM_005649')[0]
+        tx = Transcript.load_by_gene_id(self.connection, 'NM_005649')[0]
         self.assertEqual(tx.transcript()[0], Interval(178138521, 178157703))
         self.assertEqual(tx.coding_sequence()[0], Interval(178139060, 178156023))
         self.assertEqual(tx.five_prime_utr()[0], Interval(178156023, 178157703))

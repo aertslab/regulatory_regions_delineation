@@ -8,7 +8,7 @@ from piecewiselocation import PieceWiseLocation
 # non-coding sequences ...
 
 
-LOAD_IDS_STATEMENT = r"""SELECT ID FROM genes"""
+LOAD_GENE_IDS_STATEMENT = r"""SELECT geneID FROM genes"""
 GET_CHROMOSOME_LENGTHS_STATEMENT = r"""SELECT name, length FROM chromosomes"""
 
 class Modes:
@@ -33,10 +33,10 @@ def chromosome_iterator(filename):
         for line in handle: yield line.rstrip()
     
 
-def ids_iterator(connection):
+def gene_ids_iterator(connection):
     cursor = connection.cursor()
-    cursor.execute(LOAD_IDS_STATEMENT)
-    for id, in cursor: yield id
+    cursor.execute(LOAD_GENE_IDS_STATEMENT)
+    for gene_id, in cursor: yield gene_id
     cursor.close()
 
 
@@ -49,12 +49,12 @@ def find_unique_transcript(transcripts, chromosomes):
 
 def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
             upstream_extension, downstream_extension, intronic_extension, mode):
-    ids = set(ids_iterator(connection))
-    alt_name2locations = dict()
-    for id in ids:
-        tx = find_unique_transcript(Transcript.load_by_id(connection, id), chromosomes)
+    gene_ids = set(gene_ids_iterator(connection))
+    gene_name2locations = dict()
+    for gene_id in gene_ids:
+        tx = find_unique_transcript(Transcript.load_by_gene_id(connection, gene_id), chromosomes)
         if not tx:
-            print >>sys.stderr, "Skipped {0:s}: no unique transcript.".format(id)
+            print >>sys.stderr, "Skipped {0:s}: no unique transcript.".format(gene_id)
             continue
         
         if tx.coding_sequence().isempty():
@@ -119,20 +119,20 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
                 downstream_location = downstream_location.filter(tx.tes_shifted_1bp_downstream_as_bp_location())
                 regulatory_location += downstream_location
         
-        alt_name2locations.setdefault(tx.altName, []).append(regulatory_location)
-    for alt_name in sorted(alt_name2locations.keys()):
-        locations = alt_name2locations[alt_name]
+        gene_name2locations.setdefault(tx.gene_name, []).append(regulatory_location)
+    for gene_name in sorted(gene_name2locations.keys()):
+        locations = gene_name2locations[gene_name]
         if (len(set([loc.chromosome for loc in locations])) != 1 or
             len(set([loc.on_positive_strand for loc in locations])) != 1):
-            print >>sys.stderr, "Skipped {0:s}: cannot combine regulatory regions.".format(alt_name)
+            print >>sys.stderr, "Skipped {0:s}: cannot combine regulatory regions.".format(gene_name)
             continue
         combined_location = reduce(operator.add, locations)
         if combined_location.isempty():
-            print >>sys.stderr, "Skipped {0:s}: no regulatory region remains.".format(alt_name)
+            print >>sys.stderr, "Skipped {0:s}: no regulatory region remains.".format(gene_name)
         else:
             for idx, interval in enumerate(combined_location):
                 yield (combined_location.chromosome, interval.start, interval.end,
-                   "{0:s}#{1:d}".format(alt_name, idx + 1), 
+                   "{0:s}#{1:d}".format(gene_name, idx + 1),
                    '+' if combined_location.on_positive_strand else '-')
 
 
