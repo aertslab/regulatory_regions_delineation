@@ -16,36 +16,32 @@ class Interval:
                 merged_intervals.append(Interval(start, end))
                 start, end = cur_start, cur_end
         # Changed on 27/06/2011: do not add empty intervals ...
-        if start < end: merged_intervals.append(Interval(start, end))
+        if start < end:
+            merged_intervals.append(Interval(start, end))
         return merged_intervals
 
-    
     def __init__(self, start, end):
         self.start = start
         self.end = end if start < end else start
-        
-    
+
     def __str__(self):
-        if self.isempty(): return "{}"
-        else: return "[{0:d},{1:d}[".format(self.start, self.end)
-        
-        
+        if self.isempty():
+            return "{}"
+        else:
+            return "[{0:d},{1:d}[".format(self.start, self.end)
+
     def __eq__(self, other):
         return self.start == other.start and self.end == other.end
-    
-    
+
     def __contains__(self, element):
         return element >= self.start and element < self.end
-    
-        
+
     def isempty(self):
         return self.start >= self.end
-       
-    
+
     def overlaps_with(self, other):
         return self.start < other.end and self.end > other.start
-    
-    
+
     def __cmp__(self, other):
         if self.start < other.start:
             return -1
