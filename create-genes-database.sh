@@ -99,7 +99,7 @@ sqlite3 -line \
 # Import refGene data in "genes" table:
 #   - Only keep the following columns:
 #       name, chrom, strand, txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, name2
-zcat refGene.txt.gz \
+zcat "${REFGENE_TABLE_FILENAME}" \
     | awk -F '\t' -v 'OFS=\t' '{ print $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $13; }' \
     | sqlite3 \
         -separator $'\t' \
