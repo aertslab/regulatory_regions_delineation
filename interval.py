@@ -42,14 +42,14 @@ class Interval:
     def overlaps_with(self, other):
         return self.start < other.end and self.end > other.start
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         if self.start < other.start:
-            return -1
+            return True
         elif self.start > other.start:
-            return +1
+            return False
         elif self.end < other.end:
-            return -1
+            return True
         elif self.end > other.end:
-            return +1
+            return False
         else:
-            return 0
+            return False
