@@ -1,9 +1,9 @@
 class Interval:
     @staticmethod
     def merge(intervals):
+        intervals = sorted(intervals)
         if len(intervals) == 0:
             return intervals
-        intervals = sorted(intervals)
         merged_intervals = []
         start, end = intervals[0].start, intervals[0].end
         for cur_interval in intervals[1:]:
