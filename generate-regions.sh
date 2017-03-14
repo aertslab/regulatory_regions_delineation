@@ -214,17 +214,17 @@ rm -f "${output_dir}/chromosomes.tmp";
 
 
 # Create distribution of length of search space ...
-figure_filename=$(
-    create_filename \
-        "${base_genome_id}" \
-        "${output_dir}" \
-        "${upstream_extension_in_bp}" \
-        "${delineation}" \
-        "${downstream_extension_in_bp}" \
-        'png'
-);
-
-bash generate-histogram.sh "${bed_filename}" || exit 1;
+#figure_filename=$(
+#    create_filename \
+#        "${base_genome_id}" \
+#        "${output_dir}" \
+#        "${upstream_extension_in_bp}" \
+#        "${delineation}" \
+#        "${downstream_extension_in_bp}" \
+#        'png'
+#);
+#
+#bash generate-histogram.sh "${bed_filename}" || exit 1;
 
 
 # Create gene ID file and gene description table ...
