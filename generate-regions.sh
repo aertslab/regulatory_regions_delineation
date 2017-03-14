@@ -103,8 +103,8 @@ file_does_not_exists "${genomes_liftover_table}";
 
 
 create_region_description() {
-	local upstream_extension_in_bp="${1}";
-	local delineation="${2}";
+	local delineation="${1}";
+	local upstream_extension_in_bp="${2}";
 	local downstream_extension_in_bp="${3}";
 	local intronic_extension_in_bp="${4}";
 
@@ -153,15 +153,16 @@ create_region_description() {
 create_filename() {
 	local base_genome_id="${1}";
 	local output_dir="${2}";
-	local upstream_extension_in_bp="${3}";
-	local delineation="${4}";
+	local delineation="${3}";
+	local upstream_extension_in_bp="${4}";
 	local downstream_extension_in_bp="${5}";
-	local extension="${6}";
+	local intronic_extension_in_bp="${6}";
+	local extension="${7}";
 
 	region_description=$(
 	    create_region_description \
-	        "${upstream_extension_in_bp}" \
 	        "${delineation}" \
+	        "${upstream_extension_in_bp}" \
 	        "${downstream_extension_in_bp}" \
 	        "${intronic_extension_in_bp}"
 	);
@@ -177,9 +178,10 @@ db_filename=$(
     create_filename \
         "${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'sqlite3.db'
 );
 
@@ -192,10 +194,11 @@ printf '\nCreate BED file ...\n\n';
 bed_filename=$(
     create_filename \
         "${base_genome_id}" \
-        "${output_dir}"
-        "${upstream_extension_in_bp}" \
+        "${output_dir}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'bed'
 );
 
@@ -218,9 +221,10 @@ rm -f "${output_dir}/chromosomes.tmp";
 #    create_filename \
 #        "${base_genome_id}" \
 #        "${output_dir}" \
-#        "${upstream_extension_in_bp}" \
 #        "${delineation}" \
+#        "${upstream_extension_in_bp}" \
 #        "${downstream_extension_in_bp}" \
+#        "${intronic_extension_in_bp}" \
 #        'png'
 #);
 #
@@ -234,9 +238,10 @@ gene_ids_filename=$(
     create_filename \
         "${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'gene-ids'
 );
 
@@ -246,9 +251,10 @@ description_table_filename=$(
     create_filename \
         "${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'gene-descriptions'
 );
 
@@ -260,9 +266,10 @@ regions_filename=$(
     create_filename \
         "${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'regions'
 );
 
@@ -272,9 +279,10 @@ region_table_filename=$(
     create_filename \
         "${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'gene-regions'
 );
 
@@ -288,9 +296,10 @@ lost_gene_ids_filename=$(
     create_filename \
         "${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'lost-gene-ids'
 );
 
@@ -298,9 +307,10 @@ all_gene_ids_filename=$(
     create_filename \
         "${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'all-gene-ids'
 );
 
@@ -321,9 +331,10 @@ ctx_pwm2r_filename=$(
     create_filename \
         "ctx_pwm2r.${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'all-gene-ids'
 );
 
@@ -339,9 +350,10 @@ fasta_filename=$(
     create_filename \
         "${base_genome_id}" \
         "${output_dir}" \
-        "${upstream_extension_in_bp}" \
         "${delineation}" \
+        "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
         'fasta'
 );
 
@@ -356,8 +368,8 @@ bash generate-liftover-fasta.sh \
 	"${base_genome_id}" \
 	"${output_dir}" \
 	$(create_region_description \
-	    "${upstream_extension_in_bp}" \
 	    "${delineation}" \
+	    "${upstream_extension_in_bp}" \
 	    "${downstream_extension_in_bp}" \
 	    "${intronic_extension_in_bp}" \
 	) \
