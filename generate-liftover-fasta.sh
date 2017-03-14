@@ -1,38 +1,59 @@
 #!/usr/bin/env bash
 
-# Constants ...
-GENOMESDIR=$DATADIR/genomes
-GENOMESLST=$GENOMESDIR/genomes.lst
+ICISTARGET_DATA_DIR='/media/data/lcb/icistarget/data';
 
-#Parameters ...
-if [ $# -eq 4 ]; then
-	genomesfile=$GENOMESLST
-elif [ $# -eq 5 ]; then
-	genomesfile=$5
-else
-	echo "Wrong number of arguments."
-	exit 2 
+
+# Parameters ...
+if [ $# -ne 5 ]; then
+	printf 'Wrong number of arguments.\n\nUsage: %s input_bed_file from_assembly output_dir suffix liftover_genomes_lst_file\n\n' "${0}";
+	exit 2;
 fi
-inputfile=$1
-refgenome=$2
-outputdir=$3
-suffix=$4
+
+
+input_bed_file="${1}";
+from_assembly="${2}";
+output_dir="${3}";
+suffix="${4}";
+liftover_genomes_lst_file="${5}";
+
+
+# Check if the needed programs exist ...
+if [ $(type liftOver > /dev/null 2>&1; echo $?;) -ne 0 ] ; then
+    printf 'ERROR: Add "liftOver" to ${PATH}.\n';
+    exit 1;
+fi
+
+if [ $(type twoBitToFa > /dev/null 2>&1; echo $?;) -ne 0 ] ; then
+    printf 'ERROR: Add "twoBitToFa" to ${PATH}.\n';
+    exit 1;
+fi
+
 
 # Performing liftOver to other species ...
-species=`cat $genomesfile | awk -F '\t' -v r=$refgenome '$3==r {print $1}' | grep -v $refgenome`
-for curspecies in $species; do
-	capital=`echo -n "${curspecies:0:1}" | tr "[:lower:]" "[:upper:]"`;
-	capspecies=`echo -n "${capital}${curspecies:1}"`
-	chainfile="$GENOMESDIR/${refgenome}To${capspecies}.over.chain"
-	bitfile="$GENOMESDIR/$curspecies.2bit"
-	bedfile="$outputdir/$curspecies.mapped.bed"
-	logfile="$outputdir/$curspecies$suffix.liftover.log"
-	echo "Liftover: $refgenome => $curspecies"
+to_assemblies=$(
+    awk -F '\t' -v "from_assembly=${from_assembly}" '
+        {
+            if ($3 == from_assembly && $1 != from_assembly) {
+                print $1;
+            }
+        }
+    ' "${liftover_genomes_lst_file}";
+)
+
+
+for to_assembly in ${to_assemblies}; do
+	# (Convert first character of to_assembly variable to uppercase with ${to_assembly^}.)
+	to_assembly_first_cap="${to_assembly^}";
+
+	chain_file="${ICISTARGET_DATA_DIR}/genomes/liftOver/${from_assembly}To${to_assembly_first_cap}.over.chain.gz";
+	twobit_file="${ICISTARGET_DATA_DIR}/genomes/2bit/${to_assembly}.2bit";
+	output_bed_file="${output_dir}/${to_assembly}.mapped.bed";
+	log_file="${output_dir}/${to_assembly}${suffix}.liftover.log";
+
+	printf "\nLiftover: ${from_assembly} => ${to_assembly} ...\n";
 	# Relaxing stringency in parameters ...
-	liftOver $inputfile $chainfile $bedfile $logfile -minMatch=0.1 -multiple
-	echo "Creating FASTA file"
-	twoBitToFa -bed=$bedfile $bitfile $outputdir/$curspecies$suffix.fasta
-	#Usage of -bed instead of -seqList is easier and safe ...
-	#awk '{printf "%s:%d-%d\n", $1, $2, $3}' $bedfile | twoBitToFa $bitfile $outputdir/$curspecies$suffix.fasta -seqList=stdin
-	#rm -f $bedfile
+	liftOver "${input_bed_file}" "${chain_file}" "${output_bed_file}" "${log_file}" -minMatch=0.1 -multiple || exit 1;
+
+	printf "\nCreating FASTA file ...\n";
+	twoBitToFa -bed="${output_bed_file}" "${twobit_file}" "${output_dir}/${to_assembly}${suffix}.fasta" || exit 1;
 done
