@@ -145,7 +145,14 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
                 or len(set([loc.on_positive_strand for loc in locations])) != 1):
             print('Skipped {0:s}: cannot combine regulatory regions.'.format(gene_name), file=sys.stderr)
             continue
-        combined_location = sum(locations)
+
+        combined_location = None
+        for location in locations:
+            if combined_location is None:
+                combined_location = location
+            else:
+                combined_location += location
+
         if combined_location.isempty():
             print('Skipped {0:s}: no regulatory region remains.'.format(gene_name), file=sys.stderr)
         else:
