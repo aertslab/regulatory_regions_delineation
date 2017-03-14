@@ -62,7 +62,7 @@ delineation=$(get_config_parameter "${ini_filename}" 'delineation');
 # Get upstream, intronic and downstream extension from config file or initialize to 0 if not found.
 upstream_extension_in_bp=$(get_config_parameter "${ini_filename}" 'upstream_extension_in_bp');
 upstream_extension_in_bp="${upstream_extension_in_bp:=0}";
-intronic_extension_in_bp=$(get_config_parameter "${ini_filename}" 'downstream_extension_in_bp');
+intronic_extension_in_bp=$(get_config_parameter "${ini_filename}" 'intronic_extension_in_bp');
 intronic_extension_in_bp="${intronic_extension_in_bp:=0}";
 downstream_extension_in_bp=$(get_config_parameter "${ini_filename}" 'downstream_extension_in_bp');
 downstream_extension_in_bp="${downstream_extension_in_bp:=0}";
