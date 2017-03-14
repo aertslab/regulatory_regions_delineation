@@ -13,13 +13,13 @@ class PieceWiseLocation:
 
     def __str__(self):
         if self.on_positive_strand:
-            string = "{0:s}: 5' {1:s}".format(self.chromosome, self.intervals[0])
+            string = "{0:s}: 5' {1:s}".format(self.chromosome, str(self.intervals[0]))
             for interval in self.intervals[1:]:
                 string += "," + str(interval)
             string += " 3' (+, 0-based)"
             return string
         else:
-            string = "{0:s}: 3' {1:s}".format(self.chromosome, self.intervals[0])
+            string = "{0:s}: 3' {1:s}".format(self.chromosome, str(self.intervals[0]))
             for interval in self.intervals[1:]:
                 string += "," + str(interval)
             string += " 5' (-, 0-based)"
