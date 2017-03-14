@@ -324,8 +324,8 @@ echo "Lost ${nr_of_lost_genes}# genes ...";
 printf '\nCreate i-cisTarget ctx-pwm2r ini file ...\n\n';
 
 full_output_dir=$(cd ${output_dir}; pwd);
-full_regions_filename=$(python -c "import os.path; print os.path.realpath('${regions_filename}');");
-full_region_table_filename=$(python -c "import os.path; print os.path.realpath('${region_table_filename}');");
+full_regions_filename=$(python -c "import os.path; print(os.path.realpath('${regions_filename}'));");
+full_region_table_filename=$(python -c "import os.path; print(os.path.realpath('${region_table_filename}'));");
 
 ctx_pwm2r_filename=$(
     create_filename \
