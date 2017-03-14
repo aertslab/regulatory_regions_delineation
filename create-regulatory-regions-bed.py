@@ -58,6 +58,9 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
     gene_ids = set(gene_ids_iterator(connection))
     gene_name2locations = dict()
     for gene_id in gene_ids:
+        # If gene_id is "NM_*", do not restrict regulatory locations by nearby "NR_*" but only by other "NM_*".
+        is_NM = True if gene_id.startswith('NM_') else False
+
         tx = find_unique_transcript(Transcript.load_by_gene_id(connection, gene_id), chromosomes)
         if not tx:
             print('Skipped {0:s}: no unique transcript.'.format(gene_id), file=sys.stderr)
@@ -107,7 +110,7 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
         # itself. The non-coding transcripts are not removed ...
         if not intragenic_location.isempty():
             for rtx in Transcript.load_by_location(connection, intragenic_location.chromosome,
-                                                   intragenic_location.span()):
+                                                   intragenic_location.span(), only_NMs=is_NM):
                 intragenic_location -= rtx.coding_exons()
         regulatory_location = intragenic_location
 
@@ -117,7 +120,7 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
             # Changed on 02/09/2011: check if upstream location is not empty ...
             if not upstream_location.isempty():
                 for rtx in Transcript.load_by_location(connection, upstream_location.chromosome,
-                                                       upstream_location.span()):
+                                                       upstream_location.span(), only_NMs=is_NM):
                     upstream_location -= (rtx.coding_exons()
                                           if tx.tss_as_bp_location() in rtx.transcript()
                                           else rtx.transcript())
@@ -131,7 +134,7 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
             # Changed on 02/09/2011: check if downstream location is not empty ...
             if not downstream_location.isempty():
                 for rtx in Transcript.load_by_location(connection, downstream_location.chromosome,
-                                                       downstream_location.span()):
+                                                       downstream_location.span(), only_NMs=is_NM):
                     downstream_location -= (rtx.coding_exons()
                                             if tx.tes_as_bp_location() in rtx.transcript()
                                             else rtx.transcript())

@@ -2,14 +2,27 @@ from interval import Interval
 from piecewiselocation import PieceWiseLocation
 
 EXON_SEPARATOR = ','
-LOAD_TRANSCRIPTS_BY_LOCATION_STATEMENT = r'''
+
+LOAD_ALL_TRANSCRIPTS_BY_LOCATION_STATEMENT = r'''
     SELECT * FROM genes
     WHERE chromosome = ? AND strand = ? AND txStart < ? AND txEnd > ?;
 '''
-LOAD_TRANSCRIPTS_BY_STRANDLESS_LOCATION_STATEMENT = r'''
+
+LOAD_ONLY_NM_TRANSCRIPTS_BY_LOCATION_STATEMENT = r'''
+    SELECT * FROM genes
+    WHERE chromosome = ? AND strand = ? AND txStart < ? AND txEnd > ? AND geneID LIKE "NM_%";
+'''
+
+LOAD_ALL_TRANSCRIPTS_BY_STRANDLESS_LOCATION_STATEMENT = r'''
     SELECT * FROM genes
     WHERE chromosome = ? AND txStart < ? AND txEnd > ?;
 '''
+
+LOAD_ONLY_NM_TRANSCRIPTS_BY_STRANDLESS_LOCATION_STATEMENT = r'''
+    SELECT * FROM genes
+    WHERE chromosome = ? AND txStart < ? AND txEnd > ? AND geneID LIKE "NM_%";
+'''
+
 LOAD_TRANSCRIPTS_BY_GENE_ID_STATEMENT = r'''SELECT * FROM genes WHERE geneID = ?;'''
 
 
@@ -31,15 +44,34 @@ class Transcript:
         return transcripts
 
     @staticmethod
-    def load_by_location(connection, chromosome, interval, strand=None):
+    def load_by_location(connection, chromosome, interval, strand=None, only_NMs=False):
         cursor = connection.cursor()
+
         if strand:
+            LOAD_TRANSCRIPTS_BY_LOCATION_STATEMENT = (
+                LOAD_ONLY_NM_TRANSCRIPTS_BY_LOCATION_STATEMENT
+                if only_NMs
+                else LOAD_ALL_TRANSCRIPTS_BY_LOCATION_STATEMENT
+            )
+
             # CAVE: end and start should be supplied to the statement in opposite order ...
-            cursor.execute(LOAD_TRANSCRIPTS_BY_LOCATION_STATEMENT, (chromosome, strand, interval.end, interval.start))
+            cursor.execute(
+                LOAD_TRANSCRIPTS_BY_LOCATION_STATEMENT,
+                (chromosome, strand, interval.end, interval.start)
+            )
         else:
+            LOAD_TRANSCRIPTS_BY_STRANDLESS_LOCATION_STATEMENT = (
+                LOAD_ONLY_NM_TRANSCRIPTS_BY_STRANDLESS_LOCATION_STATEMENT
+                if only_NMs
+                else LOAD_ALL_TRANSCRIPTS_BY_STRANDLESS_LOCATION_STATEMENT
+            )
+
             # CAVE: end and start should be supplied to the statement in opposite order ...
-            cursor.execute(LOAD_TRANSCRIPTS_BY_STRANDLESS_LOCATION_STATEMENT,
-                           (chromosome, interval.end, interval.start))
+            cursor.execute(
+                LOAD_TRANSCRIPTS_BY_STRANDLESS_LOCATION_STATEMENT,
+                (chromosome, interval.end, interval.start)
+            )
+
         transcripts = [Transcript(*columns) for columns in cursor]
         cursor.close()
         return transcripts
