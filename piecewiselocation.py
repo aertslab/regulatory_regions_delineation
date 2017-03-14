@@ -74,7 +74,7 @@ class PieceWiseLocation:
 
     def filter(self, element):
         return PieceWiseLocation(self.chromosome, self.on_positive_strand,
-                                 filter(lambda interval: element in interval, self.intervals))
+                                 list(filter(lambda interval: element in interval, self.intervals)))
 
     def extend_upstream(self, number_of_bases, chromosome2length):
         if number_of_bases <= 0:
