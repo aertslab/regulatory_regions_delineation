@@ -66,10 +66,7 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
             print('Skipped {0:s}: no unique transcript.'.format(gene_id), file=sys.stderr)
             continue
 
-        if tx.coding_sequence().isempty():
-            # Non-coding sequences = transcript is assumed not to be regulatory active for the transcript itself ...
-            intragenic_location = tx.coding_sequence()  # = empty!
-        elif mode == Modes.FULL_TRANSCRIPT:
+        if mode == Modes.FULL_TRANSCRIPT:
             # Intragenic location = full transcript ...
             intragenic_location = tx.transcript()
         elif mode == Modes.ALL_INTRONS:
