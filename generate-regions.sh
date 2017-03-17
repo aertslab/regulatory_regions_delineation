@@ -335,7 +335,7 @@ ctx_pwm2r_filename=$(
         "${upstream_extension_in_bp}" \
         "${downstream_extension_in_bp}" \
         "${intronic_extension_in_bp}" \
-        'all-gene-ids'
+        'ini'
 );
 
 cat ctx-pwm2r-template.ini \
