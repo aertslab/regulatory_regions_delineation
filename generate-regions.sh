@@ -314,7 +314,7 @@ all_gene_ids_filename=$(
         'all-gene-ids'
 );
 
-grep -v '^#' "${ucsc_table}" | cut -f13 | sort -u > "${all_gene_ids_filename}";
+zgrep -v '^#' "${ucsc_table}" | cut -f13 | sort -u > "${all_gene_ids_filename}";
 grep -vxF -f "${gene_ids_filename}" "${all_gene_ids_filename}" > "${lost_gene_ids_filename}";
 nr_of_lost_genes=$(cat "${lost_gene_ids_filename}" | wc -l);
 echo "Lost ${nr_of_lost_genes}# genes ...";
