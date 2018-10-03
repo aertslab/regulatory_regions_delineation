@@ -8,20 +8,20 @@
 
 # Parameters ...
 if [ $# -ne 2 ]; then
-	printf 'Usage: ./generate-regions.sh ini_file output_dir\n\nERROR: Wrong number of arguments.\n\n' > /dev/stderr;
-	exit 2;
+    printf 'Usage: ./generate_regions.sh ini_file output_dir\n\nERROR: Wrong number of arguments.\n\n' > /dev/stderr;
+    exit 2;
 fi
 
 ini_filename="${1}";
 output_dir="${2}";
 
 if [ ! -f "${ini_filename}" ] ; then
-	printf 'ERROR: Ini file does not exist.\n';
-	exit 2
+    printf 'ERROR: Ini file does not exist.\n';
+    exit 2
 fi
 
 if [ ! -d "${output_dir}" ] ; then
-	mkdir "${output_dir}";
+    mkdir "${output_dir}";
 fi
 
 
@@ -103,10 +103,10 @@ file_does_not_exists "${genomes_liftover_table}";
 
 
 create_region_description() {
-	local delineation="${1}";
-	local upstream_extension_in_bp="${2}";
-	local downstream_extension_in_bp="${3}";
-	local intronic_extension_in_bp="${4}";
+    local delineation="${1}";
+    local upstream_extension_in_bp="${2}";
+    local downstream_extension_in_bp="${3}";
+    local intronic_extension_in_bp="${4}";
 
     case "${delineation}" in
         'FullTx')
@@ -121,53 +121,53 @@ create_region_description() {
             suffix='-5utr-intron1';;
         *)
             printf '\nERROR: Invalid delineation "%s".\n\n' "${delineation}" > /dev/stderr;
-	        exit 2;;
+            exit 2;;
     esac
 
-	if [ ${intronic_extension_in_bp} -gt 0 ] ; then
-	    intronic="-tss-downstream${intronic_extension_in_bp}";
-	else
-	    intronic='';
-	fi
+    if [ ${intronic_extension_in_bp} -gt 0 ] ; then
+        intronic="-tss-downstream${intronic_extension_in_bp}";
+    else
+        intronic='';
+    fi
 
-	if [ ${downstream_extension_in_bp} -gt 0 ] ; then
-		downstream="-downstream${downstream_extension_in_bp}";
-	else
-	    downstream="";
-	fi
+    if [ ${downstream_extension_in_bp} -gt 0 ] ; then
+        downstream="-downstream${downstream_extension_in_bp}";
+    else
+        downstream="";
+    fi
 
-	if [ ${upstream_extension_in_bp} -gt 0 ] ; then
-		upstream="-upstream${upstream_extension_in_bp}";
-	else
-	    upstream="";
-	fi
+    if [ ${upstream_extension_in_bp} -gt 0 ] ; then
+        upstream="-upstream${upstream_extension_in_bp}";
+    else
+        upstream="";
+    fi
 
-	if [ ${downstream_extension_in_bp} -gt 0 -o ${upstream_extension_in_bp} -gt 0 ]; then
-		echo "-limited${upstream}${downstream}${intronic}${suffix}";
-	else
-	    echo "${intronic}${suffix}";
-	fi
+    if [ ${downstream_extension_in_bp} -gt 0 -o ${upstream_extension_in_bp} -gt 0 ]; then
+        echo "-limited${upstream}${downstream}${intronic}${suffix}";
+    else
+        echo "${intronic}${suffix}";
+    fi
 }
 
 
 create_filename() {
-	local base_genome_id="${1}";
-	local output_dir="${2}";
-	local delineation="${3}";
-	local upstream_extension_in_bp="${4}";
-	local downstream_extension_in_bp="${5}";
-	local intronic_extension_in_bp="${6}";
-	local extension="${7}";
+    local base_genome_id="${1}";
+    local output_dir="${2}";
+    local delineation="${3}";
+    local upstream_extension_in_bp="${4}";
+    local downstream_extension_in_bp="${5}";
+    local intronic_extension_in_bp="${6}";
+    local extension="${7}";
 
-	region_description=$(
-	    create_region_description \
-	        "${delineation}" \
-	        "${upstream_extension_in_bp}" \
-	        "${downstream_extension_in_bp}" \
-	        "${intronic_extension_in_bp}"
-	);
+    region_description=$(
+        create_region_description \
+            "${delineation}" \
+            "${upstream_extension_in_bp}" \
+            "${downstream_extension_in_bp}" \
+            "${intronic_extension_in_bp}"
+    );
 
-	echo "${output_dir}/${base_genome_id}${region_description}.${extension}";
+    echo "${output_dir}/${base_genome_id}${region_description}.${extension}";
 }
 
 
@@ -365,15 +365,15 @@ printf '\nLiftover procedure ...\n\n';
 
 bash generate_liftover_fasta.sh \
     "${bed_filename}" \
-	"${base_genome_id}" \
-	"${output_dir}" \
-	$(create_region_description \
-	    "${delineation}" \
-	    "${upstream_extension_in_bp}" \
-	    "${downstream_extension_in_bp}" \
-	    "${intronic_extension_in_bp}" \
-	) \
-	"${genomes_liftover_table}" || exit 1;
+    "${base_genome_id}" \
+    "${output_dir}" \
+    $(create_region_description \
+        "${delineation}" \
+        "${upstream_extension_in_bp}" \
+        "${downstream_extension_in_bp}" \
+        "${intronic_extension_in_bp}" \
+    ) \
+    "${genomes_liftover_table}" || exit 1;
 
 
 # Copy ini file to output folder ...
