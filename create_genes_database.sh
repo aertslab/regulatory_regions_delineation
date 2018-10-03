@@ -2,7 +2,7 @@
 
 if [ ${#@} -ne 3 ]; then
 	printf 'Wrong number of input arguments.\n\n';
-	printf 'Usage:\n    bash create-genes-database.sh <refgene_table_filename> <genome_2bit_filename> <database_name>\n\n';
+	printf 'Usage:\n    bash create_genes_database.sh <refgene_table_filename> <genome_2bit_filename> <database_name>\n\n';
 	printf 'Link to input files:\n';
 	printf '    - refgene_table_filename:  ftp://hgdownload.cse.ucsc.edu/goldenPath/<assembly>/database/refGene.txt.gz\n';
 	printf '    - genome_2bit_filename:    ftp://hgdownload.cse.ucsc.edu/goldenPath/<assembly>/bigZips/<assembly>.2bit\n\n';

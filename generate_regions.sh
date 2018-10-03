@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Dependencies:
-#	create-genes-database.sh, generate-liftover-fasta.sh
-#   create-regulatory-regions-bed.py, interval.py, piecewiselocation.py, transcript.py
-#	twoBitInfo, twoBitToFa, sqlite3
+#   create_genes_database.sh, generate_liftover_fasta.sh
+#   create_regulatory_regions_bed.py, interval.py, piecewiselocation.py, transcript.py
+#   twoBitInfo, twoBitToFa, sqlite3
 
 
 # Parameters ...
@@ -185,7 +185,7 @@ db_filename=$(
         'sqlite3.db'
 );
 
-bash create-genes-database.sh "${ucsc_table}" "${base_genome_2bit_file}" "${db_filename}" || exit 1;
+bash create_genes_database.sh "${ucsc_table}" "${base_genome_2bit_file}" "${db_filename}" || exit 1;
 
 
 # Create BED file ...
@@ -204,7 +204,7 @@ bed_filename=$(
 
 echo "${chromosomes}" | tr ';' '\n' > "${output_dir}/chromosomes.tmp";
 
-python create-regulatory-regions-bed.py \
+python create_regulatory_regions_bed.py \
     "${db_filename}" \
     "${output_dir}/chromosomes.tmp" \
     "${upstream_extension_in_bp}" \
@@ -286,7 +286,7 @@ region_table_filename=$(
         'gene-regions'
 );
 
-python generate-gene-region-table.py "${bed_filename}" > "${region_table_filename}" || exit 1;
+python generate_gene_region_table.py "${bed_filename}" > "${region_table_filename}" || exit 1;
 
 
 # Analysis of lost gene IDs ...
@@ -363,7 +363,7 @@ twoBitToFa -bed="${bed_filename}" "${base_genome_2bit_file}" "${fasta_filename}"
 # Liftover procedure ...
 printf '\nLiftover procedure ...\n\n';
 
-bash generate-liftover-fasta.sh \
+bash generate_liftover_fasta.sh \
     "${bed_filename}" \
 	"${base_genome_id}" \
 	"${output_dir}" \

@@ -166,7 +166,7 @@ def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
 
 def display_usage():
     print(
-        'Usage: python create-regulatory-regions-bed.py <sqlite3-db> <chromosomes> <upstream-extend> <downstream-extend> <intronic-extend> <FullTx|AllIntrons|5utrIntron1|NoTx|5utr>',
+        'Usage: python create_regulatory_regions_bed.py <sqlite3-db> <chromosomes> <upstream-extend> <downstream-extend> <intronic-extend> <FullTx|AllIntrons|5utrIntron1|NoTx|5utr>',
         file=sys.stderr)
 
 
