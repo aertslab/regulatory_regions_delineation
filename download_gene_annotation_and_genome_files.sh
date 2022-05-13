@@ -3,9 +3,7 @@
 DATA_DIR='./data';
 
 # Default UCSC download server.
-#UCSC_DOWNLOAD_MIRROR='hgdownload.cse.ucsc.edu';
-# San Diego UCSC download server.
-UCSC_DOWNLOAD_MIRROR='hgdownload-sd.cse.ucsc.edu';
+UCSC_DOWNLOAD_MIRROR='hgdownload.cse.ucsc.edu';
 
 
 get_download_command () {
@@ -37,11 +35,11 @@ get_download () {
         printf 'Usage: get_download download_url download_filename hide_download_progress=[01]\n\n';
         printf 'Examples:\n';
         printf '  Print content of url to standard output and print download progress:\n';
-        printf '    download_to_stdout ftp://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ stdout\n\n';
+        printf '    download_to_stdout http://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ stdout\n\n';
         printf '  Write content of url to a filename and print download progress:\n';
-        printf '    download_to_stdout ftp://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ release-notes-index.txt\n\n';
+        printf '    download_to_stdout http://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ release-notes-index.txt\n\n';
         printf '  Print content of url to stdout and do not print download progress:\n';
-        printf '    download_to_stdout ftp://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ stdout 1\n\n';
+        printf '    download_to_stdout http://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ stdout 1\n\n';
         return 1;
     fi
 
@@ -92,10 +90,10 @@ get_download () {
 
 get_last_refseq_version () {
     # Get latest released version of refSeq by looking at "RefSeq-release-*.txt"
-    # in ftp://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/.
+    # in http://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/.
     # In general UCSC keeps gene annotation up to date with refSeq releases.
     refseq_version=$(
-        get_download ftp://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ stdout 1 \
+        get_download http://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ stdout 1 \
             | sed -n 's/.\+RefSeq-release\([0-9]\+\).\+/\1/p'
     );
 
@@ -116,7 +114,7 @@ download_refseq_gene_annotation_file () {
         printf '      Specify assembly version: e.g. hg38\n';
         printf '      Check the following links for possible assembly version names:\n';
         printf '        - http://hgdownload.cse.ucsc.edu/downloads.html\n';
-        printf '        - ftp://hgdownload.cse.ucsc.edu/goldenPath/\n\n';
+        printf '        - http://hgdownload.cse.ucsc.edu/goldenPath/\n\n';
         printf '  - refGene|ncbiRefSeq:\n';
         printf '      Download refGene or ncbiRefSeq gene annotation.\n\n';
         printf 'Examples:\n';
@@ -273,8 +271,8 @@ show_help () {
     printf '  - get_download_command: Find cURL or wget.\n';
     printf '  - get_download: Download a file from an URL.\n';
     printf '  - get_last_refseq_version: Get last refSeq version.\n';
-    printf '  - download_refseq_gene_annotation_file: \n';
-    printf '  - download_2bit_files_and_chain_files_for_liftover_genomes_filename:\n\n';
+    printf '  - download_refseq_gene_annotation_file: Download refSeq gene annotation file.\n';
+    printf '  - download_2bit_files_and_chain_files_for_liftover_genomes_filename: Download 2bit and chain files.\n\n';
 }
 
 
