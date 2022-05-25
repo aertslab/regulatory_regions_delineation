@@ -14,15 +14,15 @@ get_download_command () {
     elif type wget > /dev/null 2>&1 ; then
         download_command='wget';
     else
-        printf 'Error: "cURL" and "wget" are not found in the path.\n\n';
-        printf '       Install one of them or specify the full path to the binary:\n\n';
-        printf '           download_command=/my/custom/path/to/curl\n\n';
+        printf 'Error: "cURL" and "wget" are not found in the path.\n\n' > 2;
+        printf '       Install one of them or specify the full path to the binary:\n\n' > 2;
+        printf '           download_command=/my/custom/path/to/curl\n\n' > 2;
         return 1;
     fi
 
     printf "Using \"%s\" to download files: download_command='%s'\n" \
         "${download_command}" \
-        "${download_command}";
+        "${download_command}" > 2;
 }
 
 
@@ -57,11 +57,13 @@ get_download () {
             # Download with cURL.
             if [ "${hide_download_progress}" = 1 ] ; then
                 "${download_command}" \
+                    -R \
                     -L \
                     -o "${download_filename}" \
                     "${download_url}" 2> /dev/null;
             else
                 "${download_command}" \
+                    -R \
                     -L \
                     -o "${download_filename}" \
                     "${download_url}";
@@ -81,7 +83,7 @@ get_download () {
             ;;
         *)
             printf 'Error: Unknown download command "%s". Expected "curl" or "wget".\n' \
-                "${download_command}";
+                "${download_command}" > 2;
             return 1;
             ;;
     esac;
