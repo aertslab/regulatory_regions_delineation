@@ -90,28 +90,53 @@ get_download () {
 }
 
 
-get_last_refseq_version () {
-    # Get latest released version of refSeq by looking at "RefSeq-release-*.txt"
-    # in http://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/.
-    # In general UCSC keeps gene annotation up to date with refSeq releases.
-    refseq_version=$(
-        get_download http://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/ stdout 1 \
-            | sed -n 's/.\+RefSeq-release\([0-9]\+\).\+/\1/p'
-    );
 
-    echo "${refseq_version}";
+
+
+get_refseq_release_dates_and_versions () {
+    REFSEQ_VERSIONS_FILE=$(tempfile -p refseq_date_and_version_);
+
+    # Get RefSeq release dates and versions and store them in a file.
+    get_download https://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/archive/ stdout 1 \
+        | awk -F '[><]| +' '{ if ( $4 ~ /RefSeq-release/ ) { print $7 " " substr($4, 15, length($4) - 18); } }' \
+        | LC_ALL='C' sort -V \
+      > "${REFSEQ_VERSIONS_FILE}";
+}
+
+
+get_refseq_version_for_downloaded_refseq_file () {
+    local downloaded_refseq_file="${1}";
+
+    if [ ${#@} -ne 1 ] ; then
+        printf 'Usage: get_refseq_version_for_downloaded_refseq_file downloaded_refseq_file\n\n';
+        printf 'Parameters:\n';
+        printf '  - downloaded_refseq_file\n\n:\n';
+        printf '      Specify path to a downloaded refSeq file downloaded from UCSC.\n';
+        return 1;
+    fi
+
+    if [ -z "${REFSEQ_VERSIONS_FILE}" ] ; then
+        # Get RefSeq release dates and versions and store them in a file (first time only).
+        get_refseq_release_dates_and_versions;
+    fi
+
+    # Add last modification time and "downloaded_refseq_file" to file
+    # with all refseq release dates and versions.
+    # Sort on date and get the RefSeq version that appeared just before
+    # the last modification time of the downloaded RefSeq file.
+    # Print RefSeq version which is most likely used by UCSC for making the file.
+    cat "${REFSEQ_VERSIONS_FILE}" <(LC_ALL=C stat -c '%y' "${downloaded_refseq_file}" \
+        | awk -F ' ' '{ print $1 " downloaded_refseq_file"; }') \
+        | LC_ALL='C' sort -V \
+        | grep -B 1 file \
+        | awk -F ' '  '{ print $2; exit; }'
 }
 
 
 download_refseq_gene_annotation_file () {
-    if [ ${#@} -ne 3 ] ; then
-        printf 'Usage: download_refseq_gene_annotation_file refseq_version assembly <refGene|ncbiRefSeq>\n\n';
+    if [ ${#@} -ne 2 ] ; then
+        printf 'Usage: download_refseq_gene_annotation_file assembly <refGene|ncbiRefSeq>\n\n';
         printf 'Parameters:\n';
-        printf '  - refseq_version:\n';
-        printf '      Specify refSeq version used on UCSC: e.g.: 90\n';
-        printf '      If refSeq version is set to 0, the last refSeq version will be used.\n';
-        printf '      UCSC normally updates gene annotation to the last version of refSeq,\n';
-        printf '      so in general you should just set this parameter to 0.\n\n';
         printf '  - assembly:\n';
         printf '      Specify assembly version: e.g. hg38\n';
         printf '      Check the following links for possible assembly version names:\n';
@@ -121,13 +146,12 @@ download_refseq_gene_annotation_file () {
         printf '      Download refGene or ncbiRefSeq gene annotation.\n\n';
         printf 'Examples:\n';
         printf '  Download last ncbiRefSeqCurated gene annotation for Homo sapiens (hg38) from UCSC:\n\n';
-        printf '  download_refseq_gene_annotation_file 0 hg38 ncbiRefSeqCurated\n\n';
+        printf '  download_refseq_gene_annotation_file hg38 ncbiRefSeqCurated\n\n';
         return 1;
     fi
 
-    local -i refseq_version="${1}";
-    local assembly="${2}";
-    local refseq_basename="${3}";
+    local assembly="${1}";
+    local refseq_basename="${2}";
     refseq_basename="${refseq_basename:=refGene}";
 
     if [ "${refseq_version}" -eq 0 ] ; then
@@ -144,12 +168,23 @@ download_refseq_gene_annotation_file () {
     # RefSeq schema.
     rsync -avzP \
         "rsync://${UCSC_DOWNLOAD_MIRROR}/goldenPath/${assembly}/database/${refseq_basename}.sql" \
-        "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r${refseq_version}.sql";
+        "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r_unknown_refseq_version.sql";
 
     # RefSeq annotation.
     rsync -avzP \
         "rsync://${UCSC_DOWNLOAD_MIRROR}/goldenPath/${assembly}/database/${refseq_basename}.txt.gz" \
-        "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r${refseq_version}.txt.gz";
+        "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r_unknown_refseq_version.txt.gz";
+
+    refseq_version=$(
+        get_refseq_version_for_downloaded_refseq_file \
+            "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r_unknown_refseq_version.txt.gz"
+    );
+
+    mv "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r_unknown_refseq_version.sql" \
+        "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r${refseq_version}.sql"
+
+    mv "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r_unknown_refseq_version.txt.gz" \
+        "${DATA_DIR}/annotations/${assembly}/${refseq_basename}.${assembly}__refseq-r${refseq_version}.txt.gz"
 }
 
 
