@@ -104,7 +104,8 @@ get_all_ucsc_assemblies () {
     fi
 
     # Get all UCSC assemblies and species names.
-    jq -r '.["ucscGenomes"] | to_entries | .[] | "\(.key)\t\(.value.scientificName) (\(.value.organism))"' "${UCSC_GENOMES_API_FILE}";
+    jq -r '.["ucscGenomes"] | to_entries | .[] | "\(.key)\t\(.value.scientificName) (\(.value.organism))"' "${UCSC_GENOMES_API_FILE}" \
+        | LC_ALL='C' sort -k 1,1V;
 }
 
 
