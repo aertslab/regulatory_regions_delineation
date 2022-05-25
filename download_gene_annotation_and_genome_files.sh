@@ -297,20 +297,6 @@ download_2bit_files_and_chain_files_for_liftover_genomes_filename () {
 }
 
 
-main () {
-    # Download refSeq version 80 gene annotation files for the following species.
-    download_refseq_gene_annotation_file 80 'danio_rerio' 'danRer10'
-    download_refseq_gene_annotation_file 80 'mus_musculus' 'mm10'
-    download_refseq_gene_annotation_file 80 'homo_sapiens' 'hg38' 'ncbiRefSeqCurated'
-
-    # Download all needed 2bit and chain files.
-    download_2bit_files_and_chain_files_for_liftover_genomes_filename "configurations/danRer10.liftover_genomes.lst";
-    download_2bit_files_and_chain_files_for_liftover_genomes_filename "configurations/hg38.liftover_genomes.lst";
-    download_2bit_files_and_chain_files_for_liftover_genomes_filename "configurations/mm10.liftover_genomes.lst";
-}
-
-#main;
-
 show_help () {
     printf 'Import functions in this script:\n\n';
     printf '  source %s\n\n' "${BASH_SOURCE[0]}";
@@ -322,9 +308,13 @@ show_help () {
     printf '  - show_help: Show this help text.\n';
     printf '  - get_download_command: Find cURL or wget.\n';
     printf '  - get_download: Download a file from an URL.\n';
-    printf '  - get_last_refseq_version: Get last refSeq version.\n';
-    printf '  - download_refseq_gene_annotation_file: Download refSeq gene annotation file.\n';
-    printf '  - download_2bit_files_and_chain_files_for_liftover_genomes_filename: Download 2bit and chain files.\n\n';
+    printf '  - get_all_ucsc_assemblies: Get all supported genome assemblies from UCSC.\n';
+    printf '  - get_refseq_release_dates_and_versions: Get all RefSeq release dates and versions.\n';
+    printf '  - get_refseq_version_for_downloaded_refseq_file: Get RefSeq version for downloaded RefSeq file from UCSC.\n';
+    printf '  - download_refseq_gene_annotation_file: Download RefSeq gene annotation file from UCSC.\n';
+    printf '  - download_2bit_file: Download 2bit file from UCSC.\n';
+    printf '  - download_chain_file: Download chain file from UCSC.\n';
+    printf '  - download_2bit_files_and_chain_files_for_liftover_genomes_filename: Download 2bit and chain files from UCSC.\n\n';
 }
 
 
