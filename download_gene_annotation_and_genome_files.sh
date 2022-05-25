@@ -170,12 +170,6 @@ download_refseq_gene_annotation_file () {
     local refseq_basename="${2}";
     refseq_basename="${refseq_basename:=refGene}";
 
-    if [ "${refseq_version}" -eq 0 ] ; then
-        printf 'Getting last refSeq version ...\n';
-        refseq_version=$(get_last_refseq_version);
-        printf 'Setting refSeq version: %d\n' "${refseq_version}";
-    fi
-
     printf "\n\nDownloading refseq gene annotation to:\n  %s\nfor %s ...\n\n" \
         "${DATA_DIR}/annotations/${assembly}/" "${assembly}";
 
