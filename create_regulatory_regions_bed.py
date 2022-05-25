@@ -46,11 +46,8 @@ def gene_ids_iterator(connection):
 
 
 def find_unique_transcript(transcripts, chromosomes):
-    if len(transcripts) == 1:
-        return transcripts[0]
-    else:
-        filtered = list(filter(lambda tx: tx.chromosome in chromosomes, transcripts))
-        return filtered[0] if len(filtered) == 1 else None
+     transcripts = list(filter(lambda tx: tx.chromosome in chromosomes, transcripts))
+     return transcripts[0] if len(transcripts) == 1 else None
 
 
 def regulatory_regions_iterator(connection, chromosomes, chromosome2length,
