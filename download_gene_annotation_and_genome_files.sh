@@ -90,7 +90,22 @@ get_download () {
 }
 
 
+get_all_ucsc_assemblies () {
+    if [ $(type jq > /dev/null 2>&1; echo $?;) -ne 0 ] ; then
+        printf 'ERROR: Add "jq" to ${PATH}.\n' > 2;
+        return 1;
+    fi
 
+    if [ -z "${UCSC_GENOMES_API_FILE}" ] ; then
+        # Get all UCSC assemblies and species and store them in a file (first time only).
+        UCSC_GENOMES_API_FILE=$(tempfile -p ucsc_genomes_api_);
+
+        get_download 'https://api.genome.ucsc.edu/list/ucscGenomes' "${UCSC_GENOMES_API_FILE}" 1;
+    fi
+
+    # Get all UCSC assemblies and species names.
+    jq -r '.["ucscGenomes"] | to_entries | .[] | "\(.key)\t\(.value.scientificName) (\(.value.organism))"' "${UCSC_GENOMES_API_FILE}";
+}
 
 
 get_refseq_release_dates_and_versions () {
