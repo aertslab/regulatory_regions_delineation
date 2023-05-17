@@ -31,10 +31,28 @@ def load_chromosome_lengths(connection):
     return chromosome2length
 
 
-def chromosome_iterator(filename):
-    with open(filename, 'r') as handle:
+def chromosome_iterator(filename, exclude_alt=True, exclude_random=True):
+    with open(filename, "r") as handle:
         for line in handle:
-            yield line.rstrip()
+            if line.startswith("#"):
+                # Skip comment lines.
+                continue
+
+            line = line.rstrip()
+
+            if line:
+                # Get first column as chromosome name.
+                chrom = line.split("\t", 1)[0]
+
+                # Skip alternative chromosomes, if requested.
+                if exclude_alt and chrom.endswith("_alt"):
+                    continue
+
+                # Skip random chromosomes, if requested.
+                if exclude_random and chrom.endswith("random"):
+                    continue
+
+                yield chrom
 
 
 def gene_ids_iterator(connection):
@@ -198,7 +216,7 @@ if __name__ == '__main__':
         print("'{0:s}' is an unknown mode.".format(sys.argv[6]), file=sys.stderr)
         sys.exit(1)
 
-    chromosomes = set(chromosome_iterator(chromosomes_filename))
+    chromosomes = set(chromosome_iterator(filename=chromosomes_filename, exclude_alt=True, exclude_random=True))
     with sqlite3.connect(database_filename) as connection:
         chromosome2length = load_chromosome_lengths(connection)
         for columns in regulatory_regions_iterator(connection, chromosomes, chromosome2length,
