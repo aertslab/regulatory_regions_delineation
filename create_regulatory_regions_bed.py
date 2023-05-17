@@ -22,7 +22,7 @@ class Modes:
 
 
 def load_chromosome_lengths(connection):
-    chromosome2length = dict()
+    chromosome2length = {}
     cursor = connection.cursor()
     cursor.execute(GET_CHROMOSOME_LENGTHS_STATEMENT)
     for name, length in cursor:
@@ -78,17 +78,17 @@ def regulatory_regions_iterator(
     mode,
 ):
     gene_ids = set(gene_ids_iterator(connection))
-    gene_name2locations = dict()
+    gene_name2locations = {}
     for gene_id in gene_ids:
         # If gene_id is "NM_*", do not restrict regulatory locations by nearby "NR_*" but only by other "NM_*".
-        is_NM = True if gene_id.startswith("NM_") else False
+        is_NM = gene_id.startswith("NM_")
 
         tx = find_unique_transcript(
             Transcript.load_by_gene_id(connection, gene_id), chromosomes
         )
         if not tx:
             print(
-                "Skipped {0:s}: no unique transcript.".format(gene_id), file=sys.stderr
+                f"Skipped {gene_id:s}: no unique transcript.", file=sys.stderr
             )
             continue
 
@@ -200,11 +200,11 @@ def regulatory_regions_iterator(
     for gene_name in sorted(gene_name2locations.keys()):
         locations = gene_name2locations[gene_name]
         if (
-            len(set([loc.chromosome for loc in locations])) != 1
-            or len(set([loc.on_positive_strand for loc in locations])) != 1
+            len({loc.chromosome for loc in locations}) != 1
+            or len({loc.on_positive_strand for loc in locations}) != 1
         ):
             print(
-                "Skipped {0:s}: cannot combine regulatory regions.".format(gene_name),
+                f"Skipped {gene_name:s}: cannot combine regulatory regions.",
                 file=sys.stderr,
             )
             continue
@@ -218,7 +218,7 @@ def regulatory_regions_iterator(
 
         if combined_location.isempty():
             print(
-                "Skipped {0:s}: no regulatory region remains.".format(gene_name),
+                f"Skipped {gene_name:s}: no regulatory region remains.",
                 file=sys.stderr,
             )
         else:
@@ -227,7 +227,7 @@ def regulatory_regions_iterator(
                     combined_location.chromosome,
                     interval.start,
                     interval.end,
-                    "{0:s}#{1:d}".format(gene_name, idx + 1),
+                    f"{gene_name:s}#{idx + 1:d}",
                     "+" if combined_location.on_positive_strand else "-",
                 )
 
@@ -267,7 +267,7 @@ if __name__ == "__main__":
     elif sys.argv[6] == "5utr":
         mode = Modes.UTR5
     else:
-        print("'{0:s}' is an unknown mode.".format(sys.argv[6]), file=sys.stderr)
+        print(f"'{sys.argv[6]:s}' is an unknown mode.", file=sys.stderr)
         sys.exit(1)
 
     chromosomes = set(
