@@ -3,20 +3,24 @@ import sys
 
 
 def bedfile_iterator(filename):
-    with open(filename, 'r') as handle:
+    with open(filename, "r") as handle:
         for line in handle:
             # Only keep 4th column of BED file with region ID information ...
-            region_name = line.rstrip().split('\t')[3]
-            gene_name, nr = region_name.split('#')
+            region_name = line.rstrip().split("\t")[3]
+            gene_name, nr = region_name.split("#")
             yield region_name, gene_name
 
 
 def main():
     if len(sys.argv) != 2:
-        print('Wrong number of input arguments.',
-              'Usage: {0:s} bed_filename > gene_name_to_region_names.tsv'.format(sys.argv[0]),
-              sep='\n',
-              file=sys.stderr)
+        print(
+            "Wrong number of input arguments.",
+            "Usage: {0:s} bed_filename > gene_name_to_region_names.tsv".format(
+                sys.argv[0]
+            ),
+            sep="\n",
+            file=sys.stderr,
+        )
         sys.exit(2)
 
     gene_name2region_names = dict()

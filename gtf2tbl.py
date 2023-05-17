@@ -19,16 +19,28 @@ import sys
 class Transcript(object):
     @staticmethod
     def _iterate_gtf(filename):
-        with open(filename, 'r') as handle:
+        with open(filename, "r") as handle:
             for line in handle:
-                if line.startswith('#') or not line.strip():
+                if line.startswith("#") or not line.strip():
                     continue
-                seq_id, source, type, start, end, score, strand, phase, attributes_str = line.rstrip().split('\t')
-                if source != 'protein_coding':
+                (
+                    seq_id,
+                    source,
+                    type,
+                    start,
+                    end,
+                    score,
+                    strand,
+                    phase,
+                    attributes_str,
+                ) = line.rstrip().split("\t")
+                if source != "protein_coding":
                     continue
                 attributes = dict()
-                for element in attributes_str.split(';'):
-                    match = re.match("^\W*([A-Za-z_]+)\W+\"([A-Za-z_0-9\.]+)\"\W*$", element)
+                for element in attributes_str.split(";"):
+                    match = re.match(
+                        '^\W*([A-Za-z_]+)\W+"([A-Za-z_0-9\.]+)"\W*$', element
+                    )
                     if match:
                         key, value = match.groups()
                         attributes[key] = value
@@ -38,16 +50,20 @@ class Transcript(object):
     @staticmethod
     def load_transcripts_from_file(gtf_filename):
         transcript_id2Transcript = dict()
-        for type, seq_id, start, end, strand, attributes in Transcript._iterate_gtf(gtf_filename):
-            transcript_id = attributes['transcript_id']
-            gene_id = attributes['gene_id']
-            transcript = transcript_id2Transcript[
-                transcript_id] if transcript_id in transcript_id2Transcript else Transcript(transcript_id, gene_id,
-                                                                                            seq_id, strand)
-            if type == 'exon':
+        for type, seq_id, start, end, strand, attributes in Transcript._iterate_gtf(
+            gtf_filename
+        ):
+            transcript_id = attributes["transcript_id"]
+            gene_id = attributes["gene_id"]
+            transcript = (
+                transcript_id2Transcript[transcript_id]
+                if transcript_id in transcript_id2Transcript
+                else Transcript(transcript_id, gene_id, seq_id, strand)
+            )
+            if type == "exon":
                 exon = (start, end)
                 transcript.exons.append(exon)
-            elif type == 'CDS':
+            elif type == "CDS":
                 CDS = (start, end)
                 transcript.CDSs.append(CDS)
             if transcript_id not in transcript_id2Transcript:
@@ -110,30 +126,65 @@ class Transcript(object):
 
 def main():
     if len(sys.argv) != 2:
-        print('Wrong number of input arguments.', file=sys.stderr)
+        print("Wrong number of input arguments.", file=sys.stderr)
         sys.exit(2)
     gtf_filename = sys.argv[1]
 
-    print('Loading GTF into memory ...', file=sys.stderr)
+    print("Loading GTF into memory ...", file=sys.stderr)
     transcripts = Transcript.load_transcripts_from_file(gtf_filename)
 
-    print('Conversion to tbl format ...', file=sys.stderr)
+    print("Conversion to tbl format ...", file=sys.stderr)
 
-    print('#bin', 'name', 'chrom', 'strand', 'txStart', 'txEnd', 'cdsStart', 'cdsEnd', 'exonCount',
-          'exonStarts', 'exonEnds', 'score', 'name2', 'cdsStartStat', 'cdsEndStat', 'exonFrames',
-          sep='\t')
+    print(
+        "#bin",
+        "name",
+        "chrom",
+        "strand",
+        "txStart",
+        "txEnd",
+        "cdsStart",
+        "cdsEnd",
+        "exonCount",
+        "exonStarts",
+        "exonEnds",
+        "score",
+        "name2",
+        "cdsStartStat",
+        "cdsEndStat",
+        "exonFrames",
+        sep="\t",
+    )
 
     for tx in transcripts:
         if len(tx) == 0:
-            print('{0:s} is an empty transcript.'.format(tx.transcript_id), file=sys.stderr)
+            print(
+                "{0:s} is an empty transcript.".format(tx.transcript_id),
+                file=sys.stderr,
+            )
             continue
 
-        exon_starts = ','.join(map(str, tx.exon_starts)) + ','
-        exon_ends = ','.join(map(str, tx.exon_ends)) + ','
+        exon_starts = ",".join(map(str, tx.exon_starts)) + ","
+        exon_ends = ",".join(map(str, tx.exon_ends)) + ","
 
-        print('NA', tx.transcript_id, tx.chromosome, tx.strand, tx.tx_start, tx.tx_end, tx.cds_start, tx.cds_end,
-              tx.exon_count, exon_starts, exon_ends, 'NA', tx.gene_id, 'NA', 'NA', 'NA',
-              sep='\t')
+        print(
+            "NA",
+            tx.transcript_id,
+            tx.chromosome,
+            tx.strand,
+            tx.tx_start,
+            tx.tx_end,
+            tx.cds_start,
+            tx.cds_end,
+            tx.exon_count,
+            exon_starts,
+            exon_ends,
+            "NA",
+            tx.gene_id,
+            "NA",
+            "NA",
+            "NA",
+            sep="\t",
+        )
 
 
 if __name__ == "__main__":

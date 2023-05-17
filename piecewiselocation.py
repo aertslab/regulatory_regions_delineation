@@ -29,8 +29,9 @@ class PieceWiseLocation:
         return Interval(self.intervals[0].start, self.intervals[-1].end)
 
     def __add__(self, other):
-        return PieceWiseLocation(self.chromosome, self.on_positive_strand,
-                                 self.intervals + other.intervals)
+        return PieceWiseLocation(
+            self.chromosome, self.on_positive_strand, self.intervals + other.intervals
+        )
 
     def __sub__(self, other):
         result_intervals = self.intervals[:]
@@ -46,7 +47,9 @@ class PieceWiseLocation:
                         s = Interval(subtract_interval.end, element.end)
                         if not s.isempty():
                             result_intervals.append(s)
-        return PieceWiseLocation(self.chromosome, self.on_positive_strand, result_intervals)
+        return PieceWiseLocation(
+            self.chromosome, self.on_positive_strand, result_intervals
+        )
 
     def isempty(self):
         # Changed on 27/06/2011: Empty intervals can also be represented as an empty list ...
@@ -60,7 +63,9 @@ class PieceWiseLocation:
         return self.intervals[index]
 
     def location(self, index):
-        return PieceWiseLocation(self.chromosome, self.on_positive_strand, [self.intervals[index]])
+        return PieceWiseLocation(
+            self.chromosome, self.on_positive_strand, [self.intervals[index]]
+        )
 
     def __iter__(self):
         for interval in self.intervals:
@@ -73,24 +78,42 @@ class PieceWiseLocation:
         return False
 
     def filter(self, element):
-        return PieceWiseLocation(self.chromosome, self.on_positive_strand,
-                                 list(filter(lambda interval: element in interval, self.intervals)))
+        return PieceWiseLocation(
+            self.chromosome,
+            self.on_positive_strand,
+            list(filter(lambda interval: element in interval, self.intervals)),
+        )
 
     def extend_upstream(self, number_of_bases, chromosome2length):
         if number_of_bases <= 0:
             raise ValueError("Number of bases must be positive integer.")
         if self.on_positive_strand:
             first_upstream_element = self.intervals[0]
-            intervals = [Interval(max(0, first_upstream_element.start - number_of_bases), first_upstream_element.end)]
+            intervals = [
+                Interval(
+                    max(0, first_upstream_element.start - number_of_bases),
+                    first_upstream_element.end,
+                )
+            ]
             intervals.extend(self.intervals[1:])
-            return PieceWiseLocation(self.chromosome, self.on_positive_strand, intervals)
+            return PieceWiseLocation(
+                self.chromosome, self.on_positive_strand, intervals
+            )
         else:
             first_upstream_element = self.intervals[-1]
             intervals = self.intervals[0:-1]
             chromosome_length = chromosome2length[self.chromosome]
-            intervals.append(Interval(first_upstream_element.start,
-                                      min(first_upstream_element.end + number_of_bases, chromosome_length)))
-            return PieceWiseLocation(self.chromosome, self.on_positive_strand, intervals)
+            intervals.append(
+                Interval(
+                    first_upstream_element.start,
+                    min(
+                        first_upstream_element.end + number_of_bases, chromosome_length
+                    ),
+                )
+            )
+            return PieceWiseLocation(
+                self.chromosome, self.on_positive_strand, intervals
+            )
 
     def extend_downstream(self, number_of_bases, chromosome2length):
         if number_of_bases <= 0:
@@ -99,20 +122,37 @@ class PieceWiseLocation:
             first_downstream_element = self.intervals[-1]
             intervals = self.intervals[0:-1]
             chromosome_length = chromosome2length[self.chromosome]
-            intervals.append(Interval(first_downstream_element.start,
-                                      min(first_downstream_element.end + number_of_bases, chromosome_length)))
-            return PieceWiseLocation(self.chromosome, self.on_positive_strand, intervals)
+            intervals.append(
+                Interval(
+                    first_downstream_element.start,
+                    min(
+                        first_downstream_element.end + number_of_bases,
+                        chromosome_length,
+                    ),
+                )
+            )
+            return PieceWiseLocation(
+                self.chromosome, self.on_positive_strand, intervals
+            )
         else:
             first_downstream_element = self.intervals[0]
-            intervals = [Interval(max(0, first_downstream_element.start - number_of_bases),
-                                  first_downstream_element.end)]
+            intervals = [
+                Interval(
+                    max(0, first_downstream_element.start - number_of_bases),
+                    first_downstream_element.end,
+                )
+            ]
             intervals.extend(self.intervals[1:])
-            return PieceWiseLocation(self.chromosome, self.on_positive_strand, intervals)
+            return PieceWiseLocation(
+                self.chromosome, self.on_positive_strand, intervals
+            )
 
     def interval_limit(self, limit):
         intervals = []
         for interval in self.intervals:
-            limited_interval = Interval(max(limit.start, interval.start), min(limit.end, interval.end))
+            limited_interval = Interval(
+                max(limit.start, interval.start), min(limit.end, interval.end)
+            )
             if not limited_interval.isempty():
                 intervals.append(limited_interval)
         return PieceWiseLocation(self.chromosome, self.on_positive_strand, intervals)
