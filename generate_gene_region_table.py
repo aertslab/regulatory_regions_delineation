@@ -23,7 +23,7 @@ def main():
         )
         sys.exit(2)
 
-    gene_name2region_names = dict()
+    gene_name2region_names = {}
     for region_name, gene_name in bedfile_iterator(sys.argv[1]):
         gene_name2region_names.setdefault(gene_name, set()).add(region_name)
     for gene_name in sorted(gene_name2region_names.keys()):

@@ -28,7 +28,7 @@ class Interval:
         if self.isempty():
             return "{}"
         else:
-            return "[{0:d},{1:d}[".format(self.start, self.end)
+            return f"[{self.start:d},{self.end:d}["
 
     def __eq__(self, other):
         return self.start == other.start and self.end == other.end
