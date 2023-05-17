@@ -3,7 +3,6 @@ import operator
 import re
 import sys
 
-
 # col1: seqid -> chrom
 # col2: if "protein_coding" continue
 #       if "tRNA" skip line (only one line per tRNA)
@@ -16,7 +15,7 @@ import sys
 #                       gene_id -> ID
 
 
-class Transcript(object):
+class Transcript:
     @staticmethod
     def _iterate_gtf(filename):
         with open(filename, "r") as handle:
@@ -36,20 +35,20 @@ class Transcript(object):
                 ) = line.rstrip().split("\t")
                 if source != "protein_coding":
                     continue
-                attributes = dict()
+                attributes = {}
                 for element in attributes_str.split(";"):
                     match = re.match(
-                        '^\W*([A-Za-z_]+)\W+"([A-Za-z_0-9\.]+)"\W*$', element
+                        r'^\W*([A-Za-z_]+)\W+"([A-Za-z_0-9\.]+)"\W*$', element
                     )
                     if match:
                         key, value = match.groups()
                         attributes[key] = value
-                # Make intervals half-open and zero-based (in GFF they are closed intervals and 1-based) ...
+                # Make intervals half-open and zero-based (in GTF they are closed intervals and 1-based) ...
                 yield type, seq_id, int(start) - 1, int(end), strand, attributes
 
     @staticmethod
     def load_transcripts_from_file(gtf_filename):
-        transcript_id2Transcript = dict()
+        transcript_id2Transcript = {}
         for type, seq_id, start, end, strand, attributes in Transcript._iterate_gtf(
             gtf_filename
         ):
@@ -114,13 +113,13 @@ class Transcript(object):
     @property
     def exon_starts(self):
         if not self.exon_count:
-            return tuple()
+            return ()
         return sorted(map(operator.itemgetter(0), self.exons))
 
     @property
     def exon_ends(self):
         if not self.exon_count:
-            return tuple()
+            return ()
         return sorted(map(operator.itemgetter(1), self.exons))
 
 
@@ -158,7 +157,7 @@ def main():
     for tx in transcripts:
         if len(tx) == 0:
             print(
-                "{0:s} is an empty transcript.".format(tx.transcript_id),
+                f"{tx.transcript_id:s} is an empty transcript.",
                 file=sys.stderr,
             )
             continue
