@@ -35,14 +35,12 @@ def iterate_gff_body(filename):
             ) = line.rstrip().split("\t")
             if feature_type not in INCLUDE_FEATURE_TYPES:
                 continue
-            attributes = dict()
+            attributes = {}
             for element in attributes_str.split(";"):
                 key, value = element.split("=")
                 if key == "Parent":
                     attributes[key] = value.split(",")
-                elif key == "ID":
-                    attributes[key] = value
-                elif key == "Name":
+                elif key == "ID" or key == "Name":
                     attributes[key] = value
             # Make intervals half-open and zero-based (in GFF they are closed intervals and 1-based) ...
             yield feature_type, seq_id, int(start) - 1, int(end), strand, attributes
@@ -79,12 +77,12 @@ class Entry:
 
     def exon_starts(self):
         if self.exon_count() == 0:
-            return tuple()
+            return ()
         return sorted(map(operator.itemgetter(0), self.exons))
 
     def exon_ends(self):
         if self.exon_count() == 0:
-            return tuple()
+            return ()
         return sorted(map(operator.itemgetter(1), self.exons))
 
     def cds_span(self):
@@ -96,7 +94,7 @@ class Entry:
 
 
 def load_data(gff_filename):
-    feature_id2entry = dict()
+    feature_id2entry = {}
     for feature_type, chromosome, start, end, strand, attributes in iterate_gff_body(
         gff_filename
     ):
@@ -124,7 +122,7 @@ def load_data(gff_filename):
                 )
                 sys.exit(1)
 
-            if feature_id in feature_id2entry.keys():
+            if feature_id in feature_id2entry:
                 # if feature_id2entry[feature_id].chromosome != chromosome or feature_id2entry[feature_id].strand != strand:
                 #     print("'mRNA' entry not compatible with child entry.", file=sys.stderr)
                 #     sys.exit(1)
@@ -139,9 +137,7 @@ def load_data(gff_filename):
         elif feature_type == "exon":
             if "Parent" not in attributes:
                 print(
-                    "'exon' entry (ID: {0:s}) has no Parent attribute.".format(
-                        feature_id
-                    ),
+                    f"'exon' entry (ID: {feature_id:s}) has no Parent attribute.",
                     file=sys.stderr,
                 )
                 sys.exit(1)
@@ -159,9 +155,7 @@ def load_data(gff_filename):
         elif feature_type == "CDS":
             if "Parent" not in attributes:
                 print(
-                    "'CDS' entry (ID: {0:s}) has no Parent attribute.".format(
-                        feature_id
-                    ),
+                    f"'CDS' entry (ID: {feature_id:s}) has no Parent attribute.",
                     file=sys.stderr,
                 )
                 sys.exit(1)
@@ -209,7 +203,7 @@ def main():
 
     for feature_id, entry in feature_id2entry.items():
         if entry.isempty():
-            print("{0:s} is an empty entry.".format(feature_id), file=sys.stderr)
+            print(f"{feature_id:s} is an empty entry.", file=sys.stderr)
             continue
         if entry.exon_count() == 0:
             entry.exons.append(entry.tx)
