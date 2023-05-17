@@ -13,13 +13,13 @@ class PieceWiseLocation:
 
     def __str__(self):
         if self.on_positive_strand:
-            string = "{0:s}: 5' {1:s}".format(self.chromosome, str(self.intervals[0]))
+            string = f"{self.chromosome:s}: 5' {str(self.intervals[0]):s}"
             for interval in self.intervals[1:]:
                 string += "," + str(interval)
             string += " 3' (+, 0-based)"
             return string
         else:
-            string = "{0:s}: 3' {1:s}".format(self.chromosome, str(self.intervals[0]))
+            string = f"{self.chromosome:s}: 3' {str(self.intervals[0]):s}"
             for interval in self.intervals[1:]:
                 string += "," + str(interval)
             string += " 5' (-, 0-based)"
@@ -36,7 +36,7 @@ class PieceWiseLocation:
     def __sub__(self, other):
         result_intervals = self.intervals[:]
         for subtract_interval in other.intervals:
-            for idx, element in enumerate(result_intervals[:]):
+            for element in result_intervals[:]:
                 if element.overlaps_with(subtract_interval):
                     result_intervals.remove(element)
                     if subtract_interval.start in element:
