@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+import argparse
 import operator
 import re
 import sys
@@ -124,66 +125,89 @@ class Transcript:
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Wrong number of input arguments.", file=sys.stderr)
-        sys.exit(2)
-    gtf_filename = sys.argv[1]
-
-    print("Loading GTF into memory ...", file=sys.stderr)
-    transcripts = Transcript.load_transcripts_from_file(gtf_filename)
-
-    print("Conversion to tbl format ...", file=sys.stderr)
-
-    print(
-        "#bin",
-        "name",
-        "chrom",
-        "strand",
-        "txStart",
-        "txEnd",
-        "cdsStart",
-        "cdsEnd",
-        "exonCount",
-        "exonStarts",
-        "exonEnds",
-        "score",
-        "name2",
-        "cdsStartStat",
-        "cdsEndStat",
-        "exonFrames",
-        sep="\t",
+    parser = argparse.ArgumentParser(
+        description="Convert a GTF file to a GenePred file."
     )
 
-    for tx in transcripts:
-        if len(tx) == 0:
-            print(
-                f"{tx.transcript_id:s} is an empty transcript.",
-                file=sys.stderr,
-            )
-            continue
+    parser.add_argument(
+        "-i",
+        "--gtf",
+        dest="gtf_filename",
+        action="store",
+        type=str,
+        required=True,
+        help="GTF input filename.",
+    )
+    parser.add_argument(
+        "-o",
+        "--gp",
+        dest="genepred_filename",
+        action="store",
+        type=str,
+        required=True,
+        help="GenePred (gene prediction) output filename.",
+    )
 
-        exon_starts = ",".join(map(str, tx.exon_starts)) + ","
-        exon_ends = ",".join(map(str, tx.exon_ends)) + ","
+    args = parser.parse_args()
 
+    print("Loading GTF into memory ...", file=sys.stderr)
+    transcripts = Transcript.load_transcripts_from_file(args.gtf_filename)
+
+    print("Conversion to GenePred format ...", file=sys.stderr)
+
+    with open(args.genepred_filename, "w") as fh_genepred:
         print(
-            "NA",
-            tx.transcript_id,
-            tx.chromosome,
-            tx.strand,
-            tx.tx_start,
-            tx.tx_end,
-            tx.cds_start,
-            tx.cds_end,
-            tx.exon_count,
-            exon_starts,
-            exon_ends,
-            "NA",
-            tx.gene_id,
-            "NA",
-            "NA",
-            "NA",
+            "#bin",
+            "name",
+            "chrom",
+            "strand",
+            "txStart",
+            "txEnd",
+            "cdsStart",
+            "cdsEnd",
+            "exonCount",
+            "exonStarts",
+            "exonEnds",
+            "score",
+            "name2",
+            "cdsStartStat",
+            "cdsEndStat",
+            "exonFrames",
             sep="\t",
+            file=fh_genepred,
         )
+
+        for tx in transcripts:
+            if len(tx) == 0:
+                print(
+                    f"{tx.transcript_id:s} is an empty transcript.",
+                    file=sys.stderr,
+                )
+                continue
+
+            exon_starts = ",".join(map(str, tx.exon_starts)) + ","
+            exon_ends = ",".join(map(str, tx.exon_ends)) + ","
+
+            print(
+                "NA",
+                tx.transcript_id,
+                tx.chromosome,
+                tx.strand,
+                tx.tx_start,
+                tx.tx_end,
+                tx.cds_start,
+                tx.cds_end,
+                tx.exon_count,
+                exon_starts,
+                exon_ends,
+                "NA",
+                tx.gene_id,
+                "NA",
+                "NA",
+                "NA",
+                sep="\t",
+                file=fh_genepred,
+            )
 
 
 if __name__ == "__main__":
