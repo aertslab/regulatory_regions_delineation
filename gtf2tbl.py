@@ -4,16 +4,20 @@ import operator
 import re
 import sys
 
-# col1: seqid -> chrom
-# col2: if "protein_coding" continue
-#       if "tRNA" skip line (only one line per tRNA)
-# col3: if "exon"       - count exons
-#                       - record start/end (col4 & col5)
-#                       - min start/end -> txStart; max start/end -> txEnd
-#       if "CDS"        - min start/end -> cdsStart; max start/end -> cdsEnd
-# col7: strand
-# col9: attributes      format: key "value";
-#                       gene_id -> ID
+
+# Convert GTF file to GenePred format.
+#
+# Rules for determining coordinates should be following the behaviour of
+# Kent Tools gtfToGenePred:
+#
+#     gtfToGenePred -genePredExt genes.gtf genes.gp
+#
+#   - Use BED-like coordinates (zero-based half open intervals).
+#   - Take protein coding transcripts only.
+#   - If transcript does not have a CDS, set highest genomic coordinate
+#     of exon as start and end for cdsStart and cdsEnd.
+#   - Stop codon is included in cdsStart and cdsEnd. (CDS normally does
+#     not include stop codon.)
 
 
 class Transcript:
