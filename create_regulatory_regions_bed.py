@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+import argparse
 import os
 import sqlite3
 import sys
@@ -87,9 +88,7 @@ def regulatory_regions_iterator(
             Transcript.load_by_gene_id(connection, gene_id), chromosomes
         )
         if not tx:
-            print(
-                f"Skipped {gene_id:s}: no unique transcript.", file=sys.stderr
-            )
+            print(f"Skipped {gene_id:s}: no unique transcript.", file=sys.stderr)
             continue
 
         if mode == Modes.FULL_TRANSCRIPT:
@@ -239,51 +238,117 @@ def display_usage():
     )
 
 
-if __name__ == "__main__":
-    if len(sys.argv) != 7:
-        display_usage()
-        print("Wrong number of arguments.", file=sys.stderr)
-        sys.exit(2)
+def main():
+    parser = argparse.ArgumentParser(
+        description="""
+            Create gene regulatory regions.
+        """,
+    )
 
-    database_filename = sys.argv[1]
-    if not os.path.isfile(database_filename):
-        print("Database file doesn't exist.", file=sys.stderr)
+    parser.add_argument(
+        "--db",
+        dest="database_filename",
+        action="store",
+        type=str,
+        required=True,
+        help="GeneSQLite3 database filename.",
+    )
+    parser.add_argument(
+        "--chrom",
+        dest="chromosome_size_filename",
+        action="store",
+        type=str,
+        required=True,
+        help="Chromosome sizes filename with list of chromosome names in first column (UCSC chrom sizes, FAIDX index or plain list).",
+    )
+    parser.add_argument(
+        "--up",
+        dest="upstream_extend",
+        action="store",
+        type=int,
+        required=True,
+        help="Extend regulatory region x bp upstream of TSS.",
+    )
+    parser.add_argument(
+        "--down",
+        dest="downstream_extend",
+        action="store",
+        type=int,
+        required=True,
+        help="Extend regulatory region x bp downstream of TSS.",
+    )
+    parser.add_argument(
+        "--intronic",
+        dest="intronic_extend",
+        action="store",
+        type=int,
+        required=True,
+        help="Extend regulatory region x bp from introns.",
+    )
+    parser.add_argument(
+        "--mode",
+        dest="mode",
+        action="store",
+        type=str,
+        required=True,
+        choices={"FullTx", "AllIntrons", "5utrIntron1", "NoTx", "5utr"},
+        help="""
+            Extend regulatory regions (determined by up, down and intronic arguments) for each gene by including:
+              - FullTx: Full transcript (5UTR, all exons and all introns).
+              - AllIntrons: All introns (no exons).
+              - 5utrIntron1: 5'UTR and 1st intron in CDS
+              - NoTx: No transcript.
+              - 5utr: 5'UTR.
+        """,
+    )
+
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.database_filename):
+        print(
+            """Database file "{args.database_filename}" doesn't exist.""",
+            file=sys.stderr,
+        )
         sys.exit(1)
-    chromosomes_filename = sys.argv[2]
-    if not os.path.isfile(chromosomes_filename):
-        print("Chromosomes file doesn't exist.", file=sys.stderr)
+
+    if not os.path.isfile(chromosome_sizes_filename):
+        print(
+            """Chromosome sizes file "{args.chromosome_sizes_filename}" doesn't exist.""",
+            file=sys.stderr,
+        )
         sys.exit(1)
-    upstream_extend = int(sys.argv[3])
-    downstream_extend = int(sys.argv[4])
-    intronic_extend = int(sys.argv[5])
-    if sys.argv[6] == "FullTx":
+
+    if args.mode == "FullTx":
         mode = Modes.FULL_TRANSCRIPT
-    elif sys.argv[6] == "AllIntrons":
+    elif args.mode == "AllIntrons":
         mode = Modes.ALL_INTRONS
-    elif sys.argv[6] == "5utrIntron1":
+    elif args.mode == "5utrIntron1":
         mode = Modes.UTR5_INTRON1
-    elif sys.argv[6] == "NoTx":
+    elif args.mode == "NoTx":
         mode = Modes.NO_TRANSCRIPT
-    elif sys.argv[6] == "5utr":
+    elif args.mode == "5utr":
         mode = Modes.UTR5
-    else:
-        print(f"'{sys.argv[6]:s}' is an unknown mode.", file=sys.stderr)
-        sys.exit(1)
 
     chromosomes = set(
         chromosome_iterator(
-            filename=chromosomes_filename, exclude_alt=True, exclude_random=True
+            filename=args.chromosome_sizes_filename,
+            exclude_alt=True,
+            exclude_random=True,
         )
     )
-    with sqlite3.connect(database_filename) as connection:
+    with sqlite3.connect(args.database_filename) as connection:
         chromosome2length = load_chromosome_lengths(connection)
         for columns in regulatory_regions_iterator(
             connection,
             chromosomes,
             chromosome2length,
-            upstream_extend,
-            downstream_extend,
-            intronic_extend,
+            args.upstream_extend,
+            args.downstream_extend,
+            args.intronic_extend,
             mode,
         ):
             print("{0:s}\t{1:d}\t{2:d}\t{3:s}\t0\t{4:s}".format(*columns))
+
+
+if __name__ == "__main__":
+    main()
