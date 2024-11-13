@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+import argparse
 import operator
 import sys
 
@@ -174,61 +175,86 @@ def load_data(gff_filename):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Wrong number of input arguments.", file=sys.stderr)
-        sys.exit(2)
-    gff_filename = sys.argv[1]
-    print("Loading GFF into memory ...", file=sys.stderr)
-    feature_id2entry = load_data(gff_filename)
-    print("Conversion to tbl format ...", file=sys.stderr)
-    print(
-        "#bin",
-        "name",
-        "chrom",
-        "strand",
-        "txStart",
-        "txEnd",
-        "cdsStart",
-        "cdsEnd",
-        "exonCount",
-        "exonStarts",
-        "exonEnds",
-        "score",
-        "name2",
-        "cdsStartStat",
-        "cdsEndStat",
-        "exonFrames",
-        sep="\t",
+    parser = argparse.ArgumentParser(
+        description="Convert a GFF file to a GenePred file."
     )
 
-    for feature_id, entry in feature_id2entry.items():
-        if entry.isempty():
-            print(f"{feature_id:s} is an empty entry.", file=sys.stderr)
-            continue
-        if entry.exon_count() == 0:
-            entry.exons.append(entry.tx)
-        cds = entry.cds_span()
-        exon_starts = ",".join(map(str, entry.exon_starts())) + ","
-        exon_ends = ",".join(map(str, entry.exon_ends())) + ","
+    parser.add_argument(
+        "-i",
+        "--gff",
+        dest="gff_filename",
+        action="store",
+        type=str,
+        required=True,
+        help="GFF input filename.",
+    )
+    parser.add_argument(
+        "-o",
+        "--gp",
+        dest="genepred_filename",
+        action="store",
+        type=str,
+        required=True,
+        help="GenePred (gene prediction) output filename.",
+    )
+
+    args = parser.parse_args()
+
+    print("Loading GFF into memory ...", file=sys.stderr)
+    feature_id2entry = load_data(args.gff_filename)
+    print("Conversion to GenePred format ...", file=sys.stderr)
+
+    with open(args.genepred_filename, "w") as fh_genepred:
         print(
-            "NA",
-            feature_id,
-            entry.chromosome,
-            entry.strand,
-            entry.tx[0],
-            entry.tx[1],
-            cds[0],
-            cds[1],
-            entry.exon_count(),
-            exon_starts,
-            exon_ends,
-            "NA",
-            entry.gene_id,
-            "NA",
-            "NA",
-            "NA",
+            "#bin",
+            "name",
+            "chrom",
+            "strand",
+            "txStart",
+            "txEnd",
+            "cdsStart",
+            "cdsEnd",
+            "exonCount",
+            "exonStarts",
+            "exonEnds",
+            "score",
+            "name2",
+            "cdsStartStat",
+            "cdsEndStat",
+            "exonFrames",
             sep="\t",
+            file=fh_genepred,
         )
+
+        for feature_id, entry in feature_id2entry.items():
+            if entry.isempty():
+                print(f"{feature_id:s} is an empty entry.", file=sys.stderr)
+                continue
+            if entry.exon_count() == 0:
+                entry.exons.append(entry.tx)
+            cds = entry.cds_span()
+            exon_starts = ",".join(map(str, entry.exon_starts())) + ","
+            exon_ends = ",".join(map(str, entry.exon_ends())) + ","
+            print(
+                "NA",
+                feature_id,
+                entry.chromosome,
+                entry.strand,
+                entry.tx[0],
+                entry.tx[1],
+                cds[0],
+                cds[1],
+                entry.exon_count(),
+                exon_starts,
+                exon_ends,
+                "NA",
+                entry.gene_id,
+                "NA",
+                "NA",
+                "NA",
+                sep="\t",
+                file=fh_genepred,
+            )
 
 
 if __name__ == "__main__":
