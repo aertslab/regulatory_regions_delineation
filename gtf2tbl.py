@@ -34,16 +34,16 @@ class Transcript:
                     phase,
                     attributes_str,
                 ) = line.rstrip().split("\t")
-                if source != "protein_coding":
-                    continue
                 attributes = {}
                 for element in attributes_str.split(";"):
                     match = re.match(r'^\W*([A-Za-z_]+)\W+"([^"]+)"\W*$', element)
                     if match:
                         key, value = match.groups()
                         attributes[key] = value
-                # Make intervals half-open and zero-based (in GTF they are closed intervals and 1-based) ...
-                yield type, seq_id, int(start) - 1, int(end), strand, attributes
+                gene_biotype = attributes.get("gene_biotype")
+                if gene_biotype and gene_biotype == "protein_coding":
+                    # Make intervals half-open and zero-based (in GTF they are closed intervals and 1-based) ...
+                    yield type, seq_id, int(start) - 1, int(end), strand, attributes
 
     @staticmethod
     def load_transcripts_from_file(gtf_filename):
