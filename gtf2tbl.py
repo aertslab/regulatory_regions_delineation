@@ -51,21 +51,22 @@ class Transcript:
         for type, seq_id, start, end, strand, attributes in Transcript._iterate_gtf(
             gtf_filename
         ):
-            transcript_id = attributes["transcript_id"]
-            gene_id = attributes["gene_id"]
-            transcript = (
-                transcript_id2Transcript[transcript_id]
-                if transcript_id in transcript_id2Transcript
-                else Transcript(transcript_id, gene_id, seq_id, strand)
-            )
-            if type == "exon":
-                exon = (start, end)
-                transcript.exons.append(exon)
-            elif type == "CDS":
-                CDS = (start, end)
-                transcript.CDSs.append(CDS)
-            if transcript_id not in transcript_id2Transcript:
-                transcript_id2Transcript[transcript_id] = transcript
+            if type == "transcript" or type == "exon" or type == "CDS":
+                transcript_id = attributes["transcript_id"]
+                gene_id = attributes["gene_id"]
+                transcript = (
+                    transcript_id2Transcript[transcript_id]
+                    if transcript_id in transcript_id2Transcript
+                    else Transcript(transcript_id, gene_id, seq_id, strand)
+                )
+                if type == "exon":
+                    exon = (start, end)
+                    transcript.exons.append(exon)
+                elif type == "CDS":
+                    CDS = (start, end)
+                    transcript.CDSs.append(CDS)
+                if transcript_id not in transcript_id2Transcript:
+                    transcript_id2Transcript[transcript_id] = transcript
         return transcript_id2Transcript.values()
 
     def __init__(self, transcript_id, gene_id, chromosome, strand):
