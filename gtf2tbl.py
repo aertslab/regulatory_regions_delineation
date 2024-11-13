@@ -148,6 +148,66 @@ class Transcript:
             return ()
         return sorted(map(operator.itemgetter(1), self.exons))
 
+    @property
+    def exon_frames(self):
+        """
+        Get exon frames.
+
+        Get for each exon how many nucleotides it should get from the previous
+        exon to be in the open reading frame. If an exon is not in the CDS, "-1"
+        is used.
+        """
+        if not self.exon_count:
+            return ()
+        exon_frames_list = []
+        left_over_codon_nucleotides = 0
+        if self.strand == "-":
+            # Negative strand.
+            for exon_start, exon_end in zip(
+                self.exon_starts[::-1], self.exon_ends[::-1]
+            ):
+                if (
+                    not self.CDSs
+                    or (exon_start > self.cds_end)
+                    or (exon_end < self.cds_start)
+                ):
+                    # Set exon frame for current exon to -1 if transcript does not
+                    # have a CDS or exon is located outside of CDS.
+                    exon_frames_list.append(-1)
+                else:
+                    exon_frames_list.append(left_over_codon_nucleotides)
+                    if exon_end > self.cds_end:
+                        exon_end = self.cds_end
+                    # Calculate number of nucleotides that are left over in the
+                    # current exon and that will be used in the next exon to continue
+                    # the open reading frame.
+                    left_over_codon_nucleotides = (
+                        exon_end + left_over_codon_nucleotides - exon_start
+                    ) % 3
+            return exon_frames_list[::-1]
+        else:
+            # Positive strand.
+            for exon_start, exon_end in zip(self.exon_starts, self.exon_ends):
+                if (
+                    not self.CDSs
+                    or (exon_end < self.cds_start)
+                    or (exon_start > self.cds_end)
+                ):
+                    # Set exon frame for current exon to -1 if transcript does not
+                    # have a CDS or exon is located outside of CDS.
+                    exon_frames_list.append(-1)
+                else:
+                    exon_frames_list.append(left_over_codon_nucleotides)
+                    if exon_start < self.cds_start:
+                        exon_start = self.cds_start
+                    # Calculate number of nucleotides that are left over in the
+                    # current exon and that will be used in the next exon to continue
+                    # the open reading frame.
+                    left_over_codon_nucleotides = (
+                        exon_end + left_over_codon_nucleotides - exon_start
+                    ) % 3
+            return exon_frames_list
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -212,6 +272,7 @@ def main():
 
             exon_starts = ",".join(map(str, tx.exon_starts)) + ","
             exon_ends = ",".join(map(str, tx.exon_ends)) + ","
+            exon_frames = ",".join(map(str, tx.exon_frames)) + ","
 
             print(
                 "NA",
@@ -229,7 +290,7 @@ def main():
                 tx.gene_id,
                 "NA",
                 "NA",
-                "NA",
+                exon_frames,
                 sep="\t",
                 file=fh_genepred,
             )
