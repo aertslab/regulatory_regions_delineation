@@ -92,13 +92,13 @@ class Transcript:
     @property
     def cds_start(self):
         if not self.CDSs:
-            return self.tx_start
+            return self.tx_end if self.strand == "-" else self.tx_start
         return min(map(operator.itemgetter(0), self.CDSs))
 
     @property
     def cds_end(self):
         if not self.CDSs:
-            return self.tx_start
+            return self.tx_end if self.strand == "-" else self.tx_start
         return max(map(operator.itemgetter(1), self.CDSs))
 
     def __len__(self):
