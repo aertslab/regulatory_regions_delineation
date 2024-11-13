@@ -51,7 +51,12 @@ class Transcript:
         for type, seq_id, start, end, strand, attributes in Transcript._iterate_gtf(
             gtf_filename
         ):
-            if type == "transcript" or type == "exon" or type == "CDS":
+            if (
+                type == "transcript"
+                or type == "exon"
+                or type == "CDS"
+                or type == "stop_codon"
+            ):
                 transcript_id = attributes["transcript_id"]
                 gene_id = attributes["gene_id"]
                 transcript = (
@@ -65,6 +70,9 @@ class Transcript:
                 elif type == "CDS":
                     CDS = (start, end)
                     transcript.CDSs.append(CDS)
+                elif type == "stop_codon":
+                    stop_codon = (start, end)
+                    transcript.stop_codon = stop_codon
                 if transcript_id not in transcript_id2Transcript:
                     transcript_id2Transcript[transcript_id] = transcript
         return transcript_id2Transcript.values()
@@ -76,6 +84,7 @@ class Transcript:
         self.strand = strand
         self.exons = []
         self.CDSs = []
+        self.stop_codon = None
 
     @property
     def tx_start(self):
@@ -92,14 +101,31 @@ class Transcript:
     @property
     def cds_start(self):
         if not self.CDSs:
-            return self.tx_end if self.strand == "-" else self.tx_start
-        return min(map(operator.itemgetter(0), self.CDSs))
+            # Kent Tools gtfToGenePred seems to put CDS start always a the highest
+            # genomic coordinate of the transcript.
+            return self.tx_end  # if self.strand == "-" else self.tx_start
+        cds_start = min(map(operator.itemgetter(0), self.CDSs))
+
+        if self.stop_codon and self.strand == "-":
+            # If transcript has an annotated stop codon, set start position as CDS
+            # start if transcript is on negative strand.
+            return self.stop_codon[0]
+
+        return cds_start
 
     @property
     def cds_end(self):
         if not self.CDSs:
-            return self.tx_end if self.strand == "-" else self.tx_start
-        return max(map(operator.itemgetter(1), self.CDSs))
+            # Kent Tools gtfToGenePred seems to put CDS end always a the highest
+            # genomic coordinate of the transcript.
+            return self.tx_end  # if self.strand == "-" else self.tx_start
+        cds_end = max(map(operator.itemgetter(1), self.CDSs))
+
+        if self.stop_codon and self.strand == "+":
+            # If transcript has an annotated stop codon, set end position as CDS
+            # end if transcript is on positive strand.
+            return self.stop_codon[1]
+        return cds_end
 
     def __len__(self):
         if not self.exon_count:
