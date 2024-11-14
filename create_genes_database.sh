@@ -100,7 +100,22 @@ sqlite3 -line \
 #   - Only keep the following columns:
 #       name, chrom, strand, txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, name2
 zcat "${REFGENE_TABLE_FILENAME}" \
-    | awk -F '\t' -v 'OFS=\t' '{ print $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $13; }' \
+    | awk \
+        -F '\t' \
+        -v 'OFS=\t' \
+        '
+        {
+            if ($1 ~ /^#/) {
+                # Skip header line.
+                next;
+            } else if (NF == 15) {
+                # GenePred file without "bin" column.
+                print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $12;
+            } else if (NF == 16) {
+                # GenePred file with "bin" column.
+                print $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $13;
+            }
+        }' \
     | sqlite3 \
         -separator $'\t' \
         -line \
