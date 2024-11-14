@@ -4,38 +4,53 @@
 create_genes_database () {
     if [ ${#@} -ne 3 ]; then
         printf 'Wrong number of input arguments.\n\n';
-        printf 'Usage:\n    bash create_genes_database.sh <refgene_table_filename> <genome_2bit_filename> <database_name>\n\n';
-        printf 'Link to input files:\n';
-        printf '    - refgene_table_filename:  ftp://hgdownload.cse.ucsc.edu/goldenPath/<assembly>/database/refGene.txt.gz\n';
-        printf '    - genome_2bit_filename:    ftp://hgdownload.cse.ucsc.edu/goldenPath/<assembly>/bigZips/<assembly>.2bit\n\n';
+        printf 'Usage:\n    bash create_genes_database.sh <refgene_table_filename|gene_pred_filename> <genome_2bit_filename> <gene_sqlite3_database_filename>\n\n';
+        printf 'Arguments:\n';
+        printf '  - refgene_table_filename:\n';
+        printf '      Download premade refGene files from:\n';
+        printf '        ftp://hgdownload.cse.ucsc.edu/goldenPath/<assembly>/database/refGene.txt.gz\n';
+        printf '  - gene_pred_filename:\n';
+        printf '      Create Gene Predictions (Extended) file from GTF/GFF with:\n';
+        printf '        - gtfToGenePred -genePredExt genes.gtf /dev/stdout | gzip -c > genes.txt.gz\n';
+        printf '          (http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred)\n';
+        printf '        - gtf2tbl.py genes.gtf | gzip -c > genes.txt.gz\n';
+        printf '        - gff2tbl.py genes.gff | gzip -c > genes.txt.gz\n';
+        printf '  - genome_2bit_filename:\n';
+        printf '      Download genome 2bit files from:\n';
+        printf '        ftp://hgdownload.cse.ucsc.edu/goldenPath/<assembly>/bigZips/<assembly>.2bit\n';
+        printf '      Create genome 2bit files from FASTA files with:\n';
+        printf '        faToTwoBit genome.fa genome.2bit \n';
+        printf '        (http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/faToTwoBit)\n';
+        printf '  - gene_sqlite3_database_filename:\n';
+        printf '      Output gene SQLite3 database filename.\n\n';
         return 2;
     fi
 
-    local REFGENE_TABLE_FILENAME="${1}";
-    local GENOME_2BIT_FILENAME="${2}";
-    local DATABASE_FILENAME="${3}";
+    local gene_pred_filename="${1}";
+    local genome_2bit_filename="${2}";
+    local gene_sqlite3_database_filename="${3}";
 
 
     # Check if all input files exist and have the right extension,
     # so there might be a high chance that the correct input files are used.
 
-    if [ ! -f "${REFGENE_TABLE_FILENAME}" ] ; then
-        printf 'ERROR: RefGene Table file "%s" could not be found.\n' "${REFGENE_TABLE_FILENAME}";
+    if [ ! -f "${gene_pred_filename}" ] ; then
+        printf 'ERROR: GenePred file or RefGene Table file "%s" could not be found.\n' "${gene_pred_filename}";
         return 1;
     fi
 
-    if [ "${REFGENE_TABLE_FILENAME}" = "${REFGENE_TABLE_FILENAME%.txt.gz}" ] ; then
-        printf 'ERROR: RefGene Table file "%s" should end with ".txt.gz".\n' "${REFGENE_TABLE_FILENAME}";
+    if [ "${gene_pred_filename}" = "${gene_pred_filename%.txt.gz}" ] ; then
+        printf 'ERROR: GenePred file or RefGene Table file "%s" should end with ".txt.gz".\n' "${gene_pred_filename}";
         return 1;
     fi
 
-    if [ ! -f "${GENOME_2BIT_FILENAME}" ] ; then
-        printf 'ERROR: Genome 2bit file "%s" could not be found.\n' "${GENOME_2BIT_FILENAME}";
+    if [ ! -f "${genome_2bit_filename}" ] ; then
+        printf 'ERROR: Genome 2bit file "%s" could not be found.\n' "${genome_2bit_filename}";
         return 1;
     fi
 
-    if [ "${GENOME_2BIT_FILENAME}" = "${GENOME_2BIT_FILENAME%.2bit}" ] ; then
-        printf 'ERROR: Genome 2bit file "%s" should end with ".2bit".\n' "${GENOME_2BIT_FILENAME}";
+    if [ "${genome_2bit_filename}" = "${genome_2bit_filename%.2bit}" ] ; then
+        printf 'ERROR: Genome 2bit file "%s" should end with ".2bit".\n' "${genome_2bit_filename}";
         return 1;
     fi
 
@@ -45,7 +60,7 @@ create_genes_database () {
     fi
 
     if [ $(type twoBitInfo > /dev/null 2>&1; echo $?;) -ne 0 ] ; then
-        printf 'ERROR: Add "twoBitInfo" to ${PATH}.\n';
+        printf 'ERROR: Add "twoBitInfo" (http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/twoBitInfo) to ${PATH}.\n';
         return 1;
     fi
 
@@ -89,19 +104,19 @@ create_genes_database () {
 
 
     # Remove old database file, if it exists.
-    rm -f "${DATABASE_FILENAME}";
+    rm -f "${gene_sqlite3_database_filename}";
 
 
     # Create "genes" and "chromsomes" tables.
     sqlite3 -line \
-        "${DATABASE_FILENAME}" \
+        "${gene_sqlite3_database_filename}" \
         "${CREATE_TABLE_GENES_QUERY}${CREATE_TABLE_CHROMOSOMES_QUERY}"
 
 
     # Import refGene data in "genes" table:
     #   - Only keep the following columns:
     #       name, chrom, strand, txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, name2
-    zcat "${REFGENE_TABLE_FILENAME}" \
+    zcat "${gene_pred_filename}" \
         | awk \
             -F '\t' \
             -v 'OFS=\t' \
@@ -121,23 +136,23 @@ create_genes_database () {
         | sqlite3 \
             -separator $'\t' \
             -line \
-            "${DATABASE_FILENAME}" \
+            "${gene_sqlite3_database_filename}" \
             '.import /dev/stdin genes';
 
 
     # Import chromosome name and chromosome size data in "chromosomes" tables.
-    twoBitInfo "${GENOME_2BIT_FILENAME}" stdout \
+    twoBitInfo "${genome_2bit_filename}" stdout \
         | sqlite3 \
             -separator $'\t' \
             -line \
-            "${DATABASE_FILENAME}" \
+            "${gene_sqlite3_database_filename}" \
             '.import /dev/stdin chromosomes';
 
 
     # Create indices for "genes" and "chromosomes" tables.
     sqlite3 \
         -line \
-        "${DATABASE_FILENAME}" \
+        "${gene_sqlite3_database_filename}" \
         "${CREATE_INDICES_FOR_GENES_TABLE_QUERY}${CREATE_INDEX_FOR_CHROMOSOMES_TABLE_QUERY}";
 }
 
