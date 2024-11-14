@@ -13,8 +13,8 @@ create_genes_database () {
         printf '      Create Gene Predictions (Extended) file from GTF/GFF with:\n';
         printf '        - gtfToGenePred -genePredExt genes.gtf /dev/stdout | gzip -c > genes.txt.gz\n';
         printf '          (http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred)\n';
-        printf '        - gtf2tbl.py genes.gtf | gzip -c > genes.txt.gz\n';
-        printf '        - gff2tbl.py genes.gff | gzip -c > genes.txt.gz\n';
+        printf '        - gtf2tbl.py -i genes.gtf -o /dev/stdout | gzip -c > genes.txt.gz\n';
+        printf '        - gff2tbl.py -i genes.gff -o /dev/stdout | gzip -c > genes.txt.gz\n';
         printf '  - genome_2bit_filename:\n';
         printf '      Download genome 2bit files from:\n';
         printf '        ftp://hgdownload.cse.ucsc.edu/goldenPath/<assembly>/bigZips/<assembly>.2bit\n';
