@@ -31,7 +31,10 @@ class Transcript:
     def empty_interval(self):
         if self.on_positive_strand():
             return PieceWiseLocation.singleton(
-                self.chromosome, self.on_positive_strand(), self.tx_start, self.tx_start
+                self.chromosome,
+                self.on_positive_strand(),
+                self.tx_start,
+                self.tx_start,
             )
         else:
             return PieceWiseLocation.singleton(
@@ -110,7 +113,11 @@ class Transcript:
 
     def __str__(self):
         return "{0:s}\t{1:d}\t{2:d}\t{3:s}\t{4:s}".format(
-            self.chromosome, self.tx_start, self.tx_end, self.gene_id, self.strand
+            self.chromosome,
+            self.tx_start,
+            self.tx_end,
+            self.gene_id,
+            self.strand,
         )
 
     def on_positive_strand(self):
@@ -129,7 +136,10 @@ class Transcript:
             )
         else:
             return PieceWiseLocation.singleton(
-                self.chromosome, self.on_positive_strand(), self.tx_end - 1, self.tx_end
+                self.chromosome,
+                self.on_positive_strand(),
+                self.tx_end - 1,
+                self.tx_end,
             )
 
     def tss_as_bp_location(self):
@@ -138,7 +148,10 @@ class Transcript:
     def tes(self):
         if self.on_positive_strand():
             return PieceWiseLocation.singleton(
-                self.chromosome, self.on_positive_strand(), self.tx_end - 1, self.tx_end
+                self.chromosome,
+                self.on_positive_strand(),
+                self.tx_end - 1,
+                self.tx_end,
             )
         else:
             return PieceWiseLocation.singleton(
@@ -161,7 +174,10 @@ class Transcript:
             )
         else:
             return PieceWiseLocation.singleton(
-                self.chromosome, self.on_positive_strand(), self.tx_end, self.tx_end + 1
+                self.chromosome,
+                self.on_positive_strand(),
+                self.tx_end,
+                self.tx_end + 1,
             )
 
     def tss_shifted_1bp_upstream_as_bp_location(self):
@@ -170,7 +186,10 @@ class Transcript:
     def tes_shifted_1bp_downstream(self):
         if self.on_positive_strand():
             return PieceWiseLocation.singleton(
-                self.chromosome, self.on_positive_strand(), self.tx_end, self.tx_end + 1
+                self.chromosome,
+                self.on_positive_strand(),
+                self.tx_end,
+                self.tx_end + 1,
             )
         else:
             return PieceWiseLocation.singleton(
@@ -185,7 +204,10 @@ class Transcript:
 
     def transcript(self):
         return PieceWiseLocation.singleton(
-            self.chromosome, self.on_positive_strand(), self.tx_start, self.tx_end
+            self.chromosome,
+            self.on_positive_strand(),
+            self.tx_start,
+            self.tx_end,
         )
 
     def five_prime_utr(self):
@@ -198,13 +220,19 @@ class Transcript:
             )
         else:
             return PieceWiseLocation.singleton(
-                self.chromosome, self.on_positive_strand(), self.cds_end, self.tx_end
+                self.chromosome,
+                self.on_positive_strand(),
+                self.cds_end,
+                self.tx_end,
             )
 
     def three_prime_utr(self):
         if self.on_positive_strand():
             return PieceWiseLocation.singleton(
-                self.chromosome, self.on_positive_strand(), self.cds_end, self.tx_end
+                self.chromosome,
+                self.on_positive_strand(),
+                self.cds_end,
+                self.tx_end,
             )
         else:
             return PieceWiseLocation.singleton(
@@ -216,7 +244,10 @@ class Transcript:
 
     def coding_sequence(self):
         return PieceWiseLocation.singleton(
-            self.chromosome, self.on_positive_strand(), self.cds_start, self.cds_end
+            self.chromosome,
+            self.on_positive_strand(),
+            self.cds_start,
+            self.cds_end,
         )
 
     def _introns_interval_iterator(self):
@@ -231,7 +262,11 @@ class Transcript:
         introns = [
             Interval(start, end) for start, end in self._introns_interval_iterator()
         ]
-        return PieceWiseLocation(self.chromosome, self.on_positive_strand(), introns)
+        return PieceWiseLocation(
+            self.chromosome,
+            self.on_positive_strand(),
+            introns,
+        )
 
     def introns_in_cds(self):
         introns = [
@@ -239,7 +274,11 @@ class Transcript:
             for intronStart, intronEnd in self._introns_interval_iterator()
             if intronEnd > self.cds_start and intronStart < self.cds_end
         ]
-        return PieceWiseLocation(self.chromosome, self.on_positive_strand(), introns)
+        return PieceWiseLocation(
+            self.chromosome,
+            self.on_positive_strand(),
+            introns,
+        )
 
     def _exons_interval_iterator(self):
         # CAVE: list of exon start and ends has an additional final comma ...
@@ -251,7 +290,11 @@ class Transcript:
 
     def exons(self):
         exons = [Interval(start, end) for start, end in self._exons_interval_iterator()]
-        return PieceWiseLocation(self.chromosome, self.on_positive_strand(), exons)
+        return PieceWiseLocation(
+            self.chromosome,
+            self.on_positive_strand(),
+            exons,
+        )
 
     def coding_exons(self):
         exons = [
@@ -259,4 +302,8 @@ class Transcript:
             for exonStart, exonEnd in self._exons_interval_iterator()
             if exonEnd > self.cds_start and exonStart < self.cds_end
         ]
-        return PieceWiseLocation(self.chromosome, self.on_positive_strand(), exons)
+        return PieceWiseLocation(
+            self.chromosome,
+            self.on_positive_strand(),
+            exons,
+        )
