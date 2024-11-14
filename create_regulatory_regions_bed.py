@@ -231,17 +231,10 @@ def regulatory_regions_iterator(
                 )
 
 
-def display_usage():
-    print(
-        "Usage: python create_regulatory_regions_bed.py <sqlite3-db> <chromosomes> <upstream-extend> <downstream-extend> <intronic-extend> <FullTx|AllIntrons|5utrIntron1|NoTx|5utr>",
-        file=sys.stderr,
-    )
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="""
-            Create gene regulatory regions.
+            Create gene regulatory regions BED file.
         """,
     )
 
@@ -251,11 +244,11 @@ def main():
         action="store",
         type=str,
         required=True,
-        help="GeneSQLite3 database filename.",
+        help='Gene SQLite3 database filename, created with "create_genes_database.sh".',
     )
     parser.add_argument(
         "--chrom",
-        dest="chromosome_size_filename",
+        dest="chromosome_sizes_filename",
         action="store",
         type=str,
         required=True,
@@ -311,7 +304,7 @@ def main():
         )
         sys.exit(1)
 
-    if not os.path.isfile(chromosome_sizes_filename):
+    if not os.path.isfile(args.chromosome_sizes_filename):
         print(
             """Chromosome sizes file "{args.chromosome_sizes_filename}" doesn't exist.""",
             file=sys.stderr,
