@@ -126,6 +126,25 @@ class Transcript:
     def on_negative_strand(self):
         return self.strand == "-"
 
+    def cds_start_location(self):
+        if self.on_positive_strand():
+            return PieceWiseLocation.singleton(
+                self.chromosome,
+                self.on_positive_strand(),
+                self.cds_start,
+                self.cds_start + 1,
+            )
+        else:
+            return PieceWiseLocation.singleton(
+                self.chromosome,
+                self.on_positive_strand(),
+                self.cds_end - 1,
+                self.cds_end,
+            )
+
+    def cds_start_as_bp_location(self):
+        return self.cds_start if self.on_positive_strand() else self.cds_end - 1
+
     def tss(self):
         if self.on_positive_strand():
             return PieceWiseLocation.singleton(
@@ -163,6 +182,25 @@ class Transcript:
 
     def tes_as_bp_location(self):
         return self.tx_end - 1 if self.on_positive_strand() else self.tx_start
+
+    def cds_start_shifted_1bp_upstream(self):
+        if self.on_positive_strand():
+            return PieceWiseLocation.singleton(
+                self.chromosome,
+                self.on_positive_strand(),
+                self.cds_start - 1,
+                self.cds_start,
+            )
+        else:
+            return PieceWiseLocation.singleton(
+                self.chromosome,
+                self.on_positive_strand(),
+                self.cds_end,
+                self.cds_end + 1,
+            )
+
+    def cds_start_shifted_1bp_upstream_as_bp_location(self):
+        return self.cds_start - 1 if self.on_positive_strand() else self.cds_end
 
     def tss_shifted_1bp_upstream(self):
         if self.on_positive_strand():
