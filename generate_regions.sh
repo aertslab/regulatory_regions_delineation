@@ -43,6 +43,8 @@ create_region_description() {
             suffix='-5utr';;
         '5utr-intron1')
             suffix='-5utr-intron1';;
+        'CDSStartNoTx')
+            suffix='-cds-start';;
         *)
             printf '\nERROR: Invalid delineation "%s".\n\n' "${delineation}" > /dev/stderr;
             return 2;;

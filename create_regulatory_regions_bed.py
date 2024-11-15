@@ -20,6 +20,7 @@ class Modes:
     UTR5_INTRON1 = 2
     NO_TRANSCRIPT = 3
     UTR5 = 4
+    CDS_START_NO_TRANSCRIPT = 5
 
 
 def load_chromosome_lengths(connection):
@@ -115,8 +116,11 @@ def regulatory_regions_iterator(
         elif mode == Modes.UTR5:
             # Intragenic location = 5'UTR ...
             intragenic_location = tx.five_prime_utr()
-        else:
+        elif mode == Modes.NO_TRANSCRIPT:
             # No transcript ...
+            intragenic_location = tx.empty_interval()
+        elif mode == Modes.CDS_START_NO_TRANSCRIPT:
+            # CDS start and no transcript ...
             intragenic_location = tx.empty_interval()
 
         if not intragenic_location.isempty() and intronic_extension > 0:
@@ -151,8 +155,14 @@ def regulatory_regions_iterator(
 
         # Upstream region ...
         if upstream_extension > 0:
-            upstream_location = tx.tss_shifted_1bp_upstream().extend_upstream(
-                upstream_extension, chromosome2length
+            upstream_location = (
+                tx.tss_shifted_1bp_upstream().extend_upstream(
+                    upstream_extension, chromosome2length
+                )
+                if mode != Modes.CDS_START_NO_TRANSCRIPT
+                else tx.cds_start_shifted_1bp_upstream().extend_upstream(
+                    upstream_extension, chromosome2length
+                )
             )
             # Changed on 02/09/2011: check if upstream location is not empty ...
             if not upstream_location.isempty():
@@ -169,13 +179,21 @@ def regulatory_regions_iterator(
                     )
                 upstream_location = upstream_location.filter(
                     tx.tss_shifted_1bp_upstream_as_bp_location()
+                    if mode != Modes.CDS_START_NO_TRANSCRIPT
+                    else tx.cds_start_shifted_1bp_upstream_as_bp_location()
                 )
                 regulatory_location += upstream_location
 
         # Downstream region ...
         if downstream_extension > 0:
-            downstream_location = tx.tes_shifted_1bp_downstream().extend_downstream(
-                downstream_extension, chromosome2length
+            downstream_location = (
+                tx.tes_shifted_1bp_downstream().extend_downstream(
+                    downstream_extension, chromosome2length
+                )
+                if mode != Modes.CDS_START_NO_TRANSCRIPT
+                else tx.cds_start_location().extend_downstream(
+                    downstream_extension, chromosome2length
+                )
             )
             # Changed on 02/09/2011: check if downstream location is not empty ...
             if not downstream_location.isempty():
@@ -192,6 +210,11 @@ def regulatory_regions_iterator(
                     )
                 downstream_location = downstream_location.filter(
                     tx.tes_shifted_1bp_downstream_as_bp_location()
+                )
+                downstream_location = downstream_location.filter(
+                    tx.tes_shifted_1bp_downstream_as_bp_location()
+                    if mode != Modes.CDS_START_NO_TRANSCRIPT
+                    else tx.cds_start_as_bp_location()
                 )
                 regulatory_location += downstream_location
 
@@ -284,7 +307,7 @@ def main():
         action="store",
         type=str,
         required=True,
-        choices={"FullTx", "AllIntrons", "5utrIntron1", "NoTx", "5utr"},
+        choices={"FullTx", "AllIntrons", "5utrIntron1", "NoTx", "5utr", "CDSStartNoTx"},
         help="""
             Extend regulatory regions (determined by up, down and intronic arguments) for each gene by including:
               - FullTx: Full transcript (5UTR, all exons and all introns).
@@ -292,6 +315,7 @@ def main():
               - 5utrIntron1: 5'UTR and 1st intron in CDS
               - NoTx: No transcript.
               - 5utr: 5'UTR.
+              - CDSStartNoTx: CDS start, no transcript.
         """,
     )
 
@@ -321,6 +345,8 @@ def main():
         mode = Modes.NO_TRANSCRIPT
     elif args.mode == "5utr":
         mode = Modes.UTR5
+    elif args.mode == "CDSStartNoTx":
+        mode = Modes.CDS_START_NO_TRANSCRIPT
 
     chromosomes = set(
         chromosome_iterator(
